@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fedbook</title>
+  <style>
+    :root {
+      --bg: #080d18;
+      --surface: #101b30;
+      --surface-2: #152239;
+      --input: #162540;
+      --border: #1c2e4d;
+      --border-input: #22375c;
+      --brand: #38aaff;
+      --primary: #168cff;
+      --primary-hover: #0e7ae6;
+      --text: #eef4fc;
+      --muted: #8ea9ca;
+      --danger: #ff8a97;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      line-height: 1.5;
+      padding-bottom: 76px;
+    }
+
+    button, input, textarea { font: inherit; }
+
+    button {
+      cursor: pointer;
+      border: 0;
+      border-radius: 10px;
+      padding: 9px 14px;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 600;
+      font-size: 13px;
+      transition: background-color 0.15s ease, opacity 0.15s ease;
+    }
+
+    button:hover { background: var(--primary-hover); }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    button.secondary {
+      background: var(--surface-2);
+      color: #b9d0ea;
+      border: 1px solid var(--border-input);
+    }
+    button.secondary:hover { background: #1c2f50; color: #fff; }
+
+    button.ghost { background: transparent; color: var(--muted); }
+    button.ghost:hover { background: var(--surface-2); color: #fff; }
+
+    button.liked { background: rgba(22, 140, 255, 0.18); color: #5bb5ff; }
+
+    input, textarea {
+      width: 100%;
+      padding: 10px 13px;
+      border: 1px solid var(--border-input);
+      border-radius: 10px;
+      background: var(--input);
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    input::placeholder, textarea::placeholder { color: #7f9bc0; }
+    input:focus, textarea:focus { outline: none; border-color: var(--brand); }
+
+    header.topbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background: rgba(11, 19, 34, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .topbar-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      height: 58px;
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .brand {
+      background: transparent;
+      color: var(--brand);
+      font-size: 22px;
+      font-weight: 800;
+      padding: 0;
+      letter-spacing: -0.02em;
+    }
+    .brand:hover { background: transparent; }
+
+    nav.desktop-nav { display: none; gap: 24px; align-items: center; }
+
+    nav.desktop-nav button {
+      background: transparent;
+      color: var(--muted);
+      padding: 8px 4px;
+      border-radius: 0;
+      border-bottom: 2px solid transparent;
+      font-size: 14px;
+    }
+
+    nav.desktop-nav button.active { color: #fff; border-bottom-color: var(--brand); }
+
+    .layout {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 18px 16px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    .sidebar { display: none; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 14px;
+    }
+
+    .row { display: flex; align-items: center; gap: 10px; }
+    .between { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .wrap { flex-wrap: wrap; }
+    .stack { display: flex; flex-direction: column; gap: 10px; }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #1a2e50;
+      color: #79c2ff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+      flex-shrink: 0;
+      overflow: hidden;
+      border: 1px solid #263c63;
+    }
+    .avatar.lg { width: 64px; height: 64px; font-size: 22px; }
+    .avatar.sm { width: 32px; height: 32px; font-size: 12px; }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+    .meta { font-size: 12px; color: var(--muted); }
+    .error { color: var(--danger); font-size: 12px; font-weight: 600; }
+
+    .postimg {
+      width: 100%;
+      max-height: 420px;
+      object-fit: cover;
+      border-radius: 12px;
+      margin-top: 12px;
+      border: 1px solid var(--border);
+      background: #0b1322;
+    }
+
+    .divider { border-top: 1px solid var(--border); margin-top: 12px; padding-top: 12px; }
+
+    .tabs {
+      display: flex;
+      gap: 6px;
+      background: #0b1322;
+      padding: 4px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      margin-bottom: 14px;
+    }
+
+    .tabs button {
+      flex: 1;
+      background: transparent;
+      color: var(--muted);
+      padding: 8px 10px;
+      font-size: 12px;
+    }
+
+    .tabs button.active { background: var(--primary); color: #fff; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+      margin-top: 14px;
+    }
+
+    .stat-num { font-size: 18px; font-weight: 700; }
+    .stat-label { font-size: 12px; color: var(--muted); }
+
+    .mobile-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 62px;
+      background: rgba(11, 19, 34, 0.96);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      z-index: 40;
+    }
+
+    .mobile-nav button {
+      background: transparent;
+      color: var(--muted);
+      border-radius: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      font-size: 11px;
+      padding: 4px;
+    }
+
+    .mobile-nav button.active { color: var(--brand); }
+
+    video {
+      width: 100%;
+      max-height: 400px;
+      border-radius: 12px;
+      background: #000;
+      margin-top: 12px;
+    }
+
+    @media (min-width: 960px) {
+      body { padding-bottom: 24px; }
+      nav.desktop-nav { display: flex; }
+      .mobile-nav { display: none; }
+      .layout { grid-template-columns: 260px 1fr 260px; align-items: start; }
+      .sidebar { display: block; position: sticky; top: 76px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <button class="brand" onclick="navigate('home')">Fedbook</button>
+      <nav class="desktop-nav" id="desktopNav"></nav>
+      <button onclick="navigate('create')">New Post</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" id="leftSidebar"></aside>
+    <main id="app"></main>
+    <aside class="sidebar" id="rightSidebar"></aside>
+  </div>
+
+  <nav class="mobile-nav" id="mobileNav"></nav>
+
+  <script>
+    const STORAGE = {
+      posts: 'fedbook_single_posts_v1',
+      people: 'fedbook_single_people_v1',
+      videos: 'fedbook_single_videos_v1',
+      profile: 'fedbook_single_profile_v1',
+    };
+
+    const DEFAULT_PROFILE = {
+      name: 'Guest User',
+      handle: '@guest_fedbook',
+      bio: 'Fedbook पर आपका स्वागत है — विचार, तस्वीरें और दोस्तों से जुड़ने की जगह।',
+      location: 'New Delhi, India',
+      avatar: '',
+      accountCreated: false,
+    };
+
+    const DEFAULT_POSTS = [
+      {
+        id: 'p1',
+        authorName: 'Aarav Verma',
+        authorHandle: '@aarav_frames',
+        isOwnPost: false,
+        msg: 'शाम की कुल्हड़ चाय और शहर की रोशनी — दिन भर की थकान एक पल में दूर हो जाती है।',
+        photo: '',
+        likes: 18,
+        likedByMe: false,
+        createdAt: '2h ago',
+        comments: [
+          { id: 'c1', authorName: 'Meera Kapoor', text: 'बहुत बढ़िया!', createdAt: '1h ago' },
+        ],
+      },
+      {
+        id: 'p2',
+        authorName: 'Kavita Nair',
+        authorHandle: '@kavita_trails',
+        isOwnPost: false,
+        msg: 'सुबह की पहाड़ी सफ़र — ठंडी हवा, धुंध से ढकी वादियाँ और शांत रास्ते।',
+        photo: '',
+        likes: 27,
+        likedByMe: true,
+        createdAt: '5h ago',
+        comments: [],
+      },
+    ];
+
+    const DEFAULT_PEOPLE = [
+      { id: 'u1', name: 'Aarav Verma', location: 'Jaipur', mutual: 12, bio: 'Street photography & chai.', status: 'friend' },
+      { id: 'u2', name: 'Kavita Nair', location: 'Dehradun', mutual: 8, bio: 'Mountain roads & travel notes.', status: 'friend' },
+      { id: 'u3', name: 'Rohan Joshi', location: 'Pune', mutual: 5, bio: 'Web developer & cyclist.', status: 'request' },
+      { id: 'u4', name: 'Ananya Deshmukh', location: 'Bhopal', mutual: 9, bio: 'Hindi literature & coffee.', status: 'request' },
+      { id: 'u5', name: 'Vikram Singh', location: 'Lucknow', mutual: 4, bio: 'Guitar covers & short films.', status: 'suggestion' },
+      { id: 'u6', name: 'Meera Kapoor', location: 'Chandigarh', mutual: 6, bio: 'Home cooking & gardening.', status: 'suggestion' },
+    ];
+
+    function load(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : structuredClone(fallback);
+      } catch {
+        return structuredClone(fallback);
+      }
+    }
+
+    function save() {
+      try {
+        localStorage.setItem(STORAGE.posts, JSON.stringify(state.posts));
+        localStorage.setItem(STORAGE.people, JSON.stringify(state.people));
+        localStorage.setItem(STORAGE.videos, JSON.stringify(state.videos));
+        localStorage.setItem(STORAGE.profile, JSON.stringify(state.profile));
+      } catch {}
+    }
+
+    const state = {
+      page: 'home',
+      friendsTab: 'all',
+      friendsQuery: '',
+      profileTab: 'mine',
+      editingProfile: false,
+      dismissIdBanner: false,
+      posts: load(STORAGE.posts, DEFAULT_POSTS),
+      people: load(STORAGE.people, DEFAULT_PEOPLE),
+      videos: load(STORAGE.videos, []),
+      profile: load(STORAGE.profile, DEFAULT_PROFILE),
+      shareFeedback: {},
+    };
+
+    function esc(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function initials(name) {
+      return (name || 'G')
+        .split(' ')
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((w) => w[0].toUpperCase())
+        .join('') || 'G';
+    }
+
+    function avatarHtml(name, src, size = '') {
+      const cls = size ? `avatar ${size}` : 'avatar';
+      if (src) {
+        return `<div class="${cls}"><img src="${esc(src)}" alt="${esc(name)}" referrerpolicy="no-referrer" /></div>`;
+      }
+      return `<div class="${cls}">${esc(initials(name))}</div>`;
+    }
+
+    function normalizeHandle(raw, name) {
+      const cleaned = (raw.trim() || name.trim() || 'user')
+        .replace(/^@+/, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9_]+/g, '_')
+        .replace(/^_+|_+$/g, '');
+      return '@' + (cleaned || 'fedbook_user');
+    }
+
+    function navigate(page) {
+      state.page = page;
+      renderAll();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function renderNavs() {
+      const reqCount = state.people.filter((p) => p.status === 'request').length;
+      const items = [
+        { id: 'home', label: 'Home', icon: '🏠' },
+        { id: 'friends', label: reqCount ? `Friends (${reqCount})` : 'Friends', short: 'Friends', icon: '👥' },
+        { id: 'create', label: 'Create', icon: '＋' },
+        { id: 'reels', label: 'Videos', icon: '🎬' },
+        { id: 'profile', label: 'Profile', icon: '👤' },
+      ];
+
+      document.getElementById('desktopNav').innerHTML = items
+        .map((i) => `<button class="${state.page === i.id ? 'active' : ''}" onclick="navigate('${i.id}')">${esc(i.label)}</button>`)
+        .join('');
+
+      document.getElementById('mobileNav').innerHTML = items
+        .map((i) => `<button class="${state.page === i.id ? 'active' : ''}" onclick="navigate('${i.id}')"><span>${i.icon}</span><span>${esc(i.short || i.label)}</span></button>`)
+        .join('');
+    }
+
+    function renderSidebars() {
+      const friendsCount = state.people.filter((p) => p.status === 'friend').length;
+      const p = state.profile;
+      document.getElementById('leftSidebar').innerHTML = `
+        <div class="card">
+          <div class="row">
+            ${avatarHtml(p.name, p.avatar)}
+            <div style="min-width:0">
+              <div style="font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.name)}</div>
+              <div class="meta">${esc(p.handle)}</div>
+            </div>
+          </div>
+          <p class="meta" style="margin:10px 0 0;color:#b2c8e2">${esc(p.bio)}</p>
+          <div class="divider row meta">
+            <span><strong style="color:#fff">${state.posts.length}</strong> Posts</span>
+            <span>·</span>
+            <span><strong style="color:#fff">${friendsCount}</strong> Friends</span>
+          </div>
+          ${!p.accountCreated ? `<button style="width:100%;margin-top:12px" onclick="navigate('profile')">अपनी Fedbook ID बनाएँ</button>` : ''}
+        </div>
+      `;
+
+      const requests = state.people.filter((x) => x.status === 'request');
+      document.getElementById('rightSidebar').innerHTML = `
+        <div class="card">
+          <div class="between" style="margin-bottom:10px">
+            <strong>Friend Requests</strong>
+            <button class="ghost" style="padding:4px 8px;font-size:12px" onclick="navigate('friends')">See all</button>
+          </div>
+          ${
+            requests.length === 0
+              ? '<p class="meta">सभी अनुरोध पूरे हो चुके हैं।</p>'
+              : requests.slice(0, 3).map((r) => `
+                <div style="padding:8px 0;border-top:1px solid var(--border)">
+                  <div class="row">
+                    ${avatarHtml(r.name, '', 'sm')}
+                    <div>
+                      <div style="font-size:13px;font-weight:600">${esc(r.name)}</div>
+                      <div class="meta">${r.mutual} mutual friends</div>
+                    </div>
+                  </div>
+                  <div class="row" style="margin-top:8px">
+                    <button style="flex:1;padding:6px" onclick="acceptReq('${r.id}')">Accept</button>
+                    <button class="secondary" style="flex:1;padding:6px" onclick="declineReq('${r.id}')">Decline</button>
+                  </div>
+                </div>`).join('')
+          }
+        </div>
+      `;
+    }
+
+    function renderPostCard(post) {
+      const feedback = state.shareFeedback[post.id];
+      const commentsHtml = post.comments.map((c) => `
+        <div class="row" style="align-items:flex-start;margin-top:8px">
+          ${avatarHtml(c.authorName, c.authorAvatar, 'sm')}
+          <div>
+            <div style="font-size:12px"><strong>${esc(c.authorName)}</strong> <span class="meta">${esc(c.createdAt)}</span></div>
+            <div style="font-size:13px;color:#c7d9ee">${esc(c.text)}</div>
+          </div>
+        </div>`).join('');
+
+      return `
+        <article class="card">
+          <div class="between">
+            <div class="row">
+              ${avatarHtml(post.authorName, post.authorAvatar)}
+              <div>
+                <div style="font-weight:700;font-size:15px">${esc(post.authorName)}</div>
+                <div class="meta">${esc(post.authorHandle)} · ${esc(post.createdAt)}</div>
+              </div>
+            </div>
+            ${post.isOwnPost ? `<button class="ghost" onclick="deletePost('${post.id}')" title="Delete post">🗑</button>` : ''}
+          </div>
+          ${post.msg ? `<p style="margin:12px 0 0;white-space:pre-line">${esc(post.msg)}</p>` : ''}
+          ${post.photo ? `<img class="postimg" src="${esc(post.photo)}" alt="Post photo" referrerpolicy="no-referrer" />` : ''}
+          <div class="divider between wrap">
+            <div class="row">
+              <button class="${post.likedByMe ? 'liked' : 'secondary'}" onclick="toggleLike('${post.id}')">❤️ ${post.likes} Like</button>
+              <button class="secondary" onclick="document.getElementById('cinput-${post.id}').focus()">💬 ${post.comments.length} Comment</button>
+            </div>
+            <button class="ghost" onclick="sharePost('${post.id}')">${feedback ? '✓ ' + feedback : '↗ Share'}</button>
+          </div>
+          ${commentsHtml ? `<div class="divider">${commentsHtml}</div>` : ''}
+          <form class="row" style="margin-top:12px" onsubmit="addComment(event, '${post.id}')">
+            <input id="cinput-${post.id}" placeholder="Comment लिखें" />
+            <button type="submit" style="flex-shrink:0">Comment</button>
+          </form>
+        </article>
+      `;
+    }
+
+    function renderHome() {
+      const banner = !state.profile.accountCreated && !state.dismissIdBanner ? `
+        <div class="card between wrap">
+          <div>
+            <div style="font-weight:700">अपनी खुद की Fedbook ID बनाएँ</div>
+            <div class="meta">अपना नाम, @username और फ़ोटो सेट करके अपने नाम से पोस्ट व कमेंट करें।</div>
+          </div>
+          <div class="row">
+            <button onclick="navigate('profile')">Create My ID</button>
+            <button class="ghost" onclick="state.dismissIdBanner=true;renderAll()">Later</button>
+          </div>
+        </div>` : '';
+
+      return `
+        <div class="between" style="margin-bottom:10px">
+          <h1 style="margin:0;font-size:20px">🏠 Home Feed</h1>
+          <span class="meta">${state.posts.length} Posts</span>
+        </div>
+        ${banner}
+        ${renderComposer(true)}
+        ${state.posts.length === 0 ? '<div class="card" style="text-align:center;padding:32px">Feed अभी खाली है। अपनी पहली पोस्ट लिखें!</div>' : state.posts.map(renderPostCard).join('')}
+      `;
+    }
+
+    function renderComposer(compact = false) {
+      return `
+        <div class="card">
+          ${compact ? '' : '<h2 style="margin:0 0 12px">＋ Create Post</h2>'}
+          <form class="stack" onsubmit="publishPost(event)">
+            <textarea id="postMsg" rows="${compact ? 2 : 4}" placeholder="क्या सोच रहे हो?"></textarea>
+            <div class="row wrap">
+              <input id="postPhoto" style="flex:1;min-width:180px" placeholder="Photo URL (optional)" />
+              <label class="secondary" style="display:inline-flex;align-items:center;padding:9px 14px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;border:1px solid var(--border-input);background:var(--surface-2);color:#b9d0ea">
+                Upload Photo
+                <input type="file" accept="image/*" style="display:none" onchange="pickPostImage(event)" />
+              </label>
+            </div>
+            <div id="postError" class="error" style="display:none"></div>
+            <div style="display:flex;justify-content:flex-end">
+              <button type="submit">Publish Post</button>
+            </div>
+          </form>
+        </div>
+      `;
+    }
+
+    function renderFriends() {
+      const friends = state.people.filter((p) => p.status === 'friend');
+      const requests = state.people.filter((p) => p.status === 'request');
+      const discover = state.people.filter((p) => p.status === 'suggestion' || p.status === 'requested');
+
+      let list = state.friendsTab === 'all' ? friends : state.friendsTab === 'requests' ? requests : discover;
+      const q = state.friendsQuery.trim().toLowerCase();
+      if (q) list = list.filter((p) => p.name.toLowerCase().includes(q) || p.location.toLowerCase().includes(q));
+
+      return `
+        <div class="card">
+          <h2 style="margin:0 0 6px">👥 Friends</h2>
+          <p class="meta" style="margin:0 0 14px">Welcome to Fedbook — Friends और Friend Requests मैनेज करें।</p>
+          <div class="tabs">
+            <button class="${state.friendsTab === 'all' ? 'active' : ''}" onclick="state.friendsTab='all';renderAll()">Friends (${friends.length})</button>
+            <button class="${state.friendsTab === 'requests' ? 'active' : ''}" onclick="state.friends
