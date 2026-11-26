@@ -3,434 +3,192 @@
 <html lang="hi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Fedbook</title>
 <style>
-:root{--bg:#080d18;--card:#111d31;--border:#243653;--blue:#168cff;--text:#eef4fc;--muted:#91a8c5}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif;padding-bottom:75px}
-button,input,textarea{font:inherit}
-button{border:0;border-radius:9px;padding:10px 14px;background:var(--blue);color:white;cursor:pointer;font-weight:bold}
-input,textarea{width:100%;padding:12px;border-radius:9px;border:1px solid var(--border);background:#17253c;color:white}
-header{position:sticky;top:0;background:#0c1628;padding:13px 16px;border-bottom:1px solid var(--border);z-index:5;display:flex;justify-content:space-between;align-items:center}
-.logo{font-size:25px;font-weight:bold;color:#38aaff}
-main{max-width:650px;margin:18px auto;padding:0 12px}
-.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:15px;margin-bottom:14px}
-.row{display:flex;align-items:center;gap:10px}
-.between{display:flex;justify-content:space-between;align-items:center;gap:10px}
-.avatar{width:42px;height:42px;border-radius:50%;background:#203b60;color:#80c5ff;display:grid;place-items:center;font-weight:bold;flex-shrink:0}
-.muted{color:var(--muted);font-size:12px}
-.postphoto{width:100%;max-height:420px;object-fit:contain;border-radius:10px;margin-top:10px;background:#080d18}
-textarea{resize:vertical;margin:10px 0}
-.mobile{position:fixed;bottom:0;left:0;right:0;background:#0c1628;border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(5,1fr);z-index:8}
-.mobile button{background:transparent;color:#a9bdd6;border-radius:0;padding:9px 2px;font-size:11px}
-.mobile button.active{color:#38aaff}
-.item{padding:12px 0;border-bottom:1px solid var(--border)}
-video{width:100%;max-height:350px;margin-top:10px}
-.followBtn{background:#168cff;min-width:95px}
-.followingBtn{background:#263954;border:1px solid #49617e}
-.stats{display:flex;gap:25px;margin:18px 0}
-.stats b{font-size:19px}
+body{margin:0;background:#080d18;color:#eef4fc;font-family:Arial,sans-serif}
+header{background:#111d31;padding:16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0}
+.logo{font-size:25px;font-weight:bold;color:#168cff}
+button{background:#168cff;color:white;border:0;border-radius:8px;padding:10px 14px;cursor:pointer}
+nav{display:flex;justify-content:space-around;background:#111d31;padding:12px;position:sticky;top:55px}
+nav button{background:transparent;color:#eef4fc}
+main{max-width:650px;margin:auto;padding:14px}
+.card{background:#111d31;border:1px solid #243653;border-radius:12px;padding:15px;margin:12px 0}
+input,textarea{width:100%;padding:12px;background:#080d18;color:white;border:1px solid #243653;border-radius:8px;margin:7px 0}
+.post img{width:100%;border-radius:10px;margin-top:10px}
+.muted{color:#91a8c5;font-size:13px}
+.stats{display:flex;justify-content:space-around;text-align:center;margin:20px 0}
+.stats strong{display:block;font-size:21px;color:#168cff}
+.avatar{width:75px;height:75px;border-radius:50%;background:#168cff;display:grid;place-items:center;font-size:30px;font-weight:bold}
 .hidden{display:none}
 </style>
 </head>
 <body>
+
 <header>
- <div class="logo" onclick="go('home')">FB Fedbook</div>
- <button onclick="go('create')">＋ New Post</button>
+ <div class="logo">FB Fedbook</div>
+ <button onclick="showPage('profile')">My Profile</button>
 </header>
 
-<main id="app"></main>
-
-<nav class="mobile">
- <button onclick="go('home')" id="n-home">🏠<br>Home</button>
- <button onclick="go('friends')" id="n-friends">👥<br>Friends</button>
- <button onclick="go('create')" id="n-create">＋<br>Create</button>
- <button onclick="go('videos')" id="n-videos">🎬<br>Videos</button>
- <button onclick="go('profile')" id="n-profile">👤<br>Profile</button>
+<nav>
+ <button onclick="showPage('home')">Home</button>
+ <button onclick="showPage('friends')">Friends</button>
+ <button onclick="showPage('search')">Search</button>
+ <button onclick="showPage('profile')">Profile</button>
 </nav>
 
+<main>
+
+<section id="home">
+ <div class="card">
+  <h3>Create Post</h3>
+  <textarea id="postText" placeholder="What's on your mind?"></textarea>
+  <input type="file" id="postPhoto" accept="image/*">
+  <button onclick="addPost()">Post</button>
+ </div>
+ <div id="feed"></div>
+</section>
+
+<section id="profile" class="hidden">
+ <div class="card">
+  <div class="avatar">FB</div>
+  <h2>Anurag</h2>
+  <p class="muted">@guest · Demo Profile</p>
+  <div class="stats">
+   <div><strong id="postCount">0</strong>Posts</div>
+   <div><strong>5M</strong>Followers</div>
+   <div><strong>120</strong>Following</div>
+  </div>
+  <p>Welcome to my Fedbook profile!</p>
+  <p class="muted">5M followers is a demo display, not real followers.</p>
+ </div>
+</section>
+
+<section id="friends" class="hidden">
+ <div class="card">
+  <h2>Friends</h2>
+  <p>Welcome to Fedbook Friends!</p>
+  <p class="muted">Friend requests feature is a demo.</p>
+ </div>
+</section>
+
+<section id="search" class="hidden">
+ <div class="card">
+  <h2>Search</h2>
+  <input id="searchText" placeholder="Search posts..." oninput="searchPosts()">
+  <div id="searchResults"></div>
+ </div>
+</section>
+
+</main>
+
 <script>
-const defaults={
- posts:[
- {id:1,name:"Aarav Verma",handle:"@aarav",text:"Welcome to Fedbook! अपनी पहली पोस्ट का आनंद लें।",photo:"",likes:12,liked:false,comments:[]},
- {id:2,name:"Kavita Nair",handle:"@kavita",text:"नमस्ते दोस्तों! Fedbook पर आपका स्वागत है।",photo:"",likes:8,liked:false,comments:[]}
- ],
- friends:[
- {id:1,name:"Aarav Verma",handle:"@aarav",status:"friend"},
- {id:2,name:"Kavita Nair",handle:"@kavita",status:"friend"},
- {id:3,name:"Rohan Joshi",handle:"@rohan",status:"request"},
- {id:4,name:"Ananya",handle:"@ananya",status:"request"},
- {id:5,name:"Vikram Singh",handle:"@vikram",status:"suggestion"}
- ],
- profile:{name:"Guest User",handle:"@guest",bio:"Fedbook पर आपका स्वागत है!"},
- videos:[]
-};
+let posts=[];
+try{
+ posts=JSON.parse(localStorage.getItem("fedbook_posts")||"[]");
+}catch(e){posts=[];}
 
-function read(key,fallback){
+function savePosts(){
  try{
-  let x=localStorage.getItem(key);
-  return x?JSON.parse(x):JSON.parse(JSON.stringify(fallback));
- }catch(e){return JSON.parse(JSON.stringify(fallback))}
-}
-
-let posts=read("fb_posts",defaults.posts);
-let friends=read("fb_friends",defaults.friends);
-let profile=read("fb_profile",defaults.profile);
-let videos=read("fb_videos",defaults.videos);
-
-/* FOLLOW SYSTEM */
-let following=read("fb_following",[]);
-let followerCounts=read("fb_follower_counts",{});
-
-let page="home";
-
-function save(){
- try{
-  localStorage.setItem("fb_posts",JSON.stringify(posts));
-  localStorage.setItem("fb_friends",JSON.stringify(friends));
-  localStorage.setItem("fb_profile",JSON.stringify(profile));
-  localStorage.setItem("fb_videos",JSON.stringify(videos));
-  localStorage.setItem("fb_following",JSON.stringify(following));
-  localStorage.setItem("fb_follower_counts",JSON.stringify(followerCounts));
+  localStorage.setItem("fedbook_posts",JSON.stringify(posts));
  }catch(e){
-  alert("Storage भर गया है। कुछ पुरानी फोटो या वीडियो हटाएँ।");
+  alert("Storage full. Please remove some photos.");
  }
 }
 
-function esc(s){
- return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function showPage(page){
+ document.querySelectorAll("main section").forEach(s=>s.classList.add("hidden"));
+ document.getElementById(page).classList.remove("hidden");
+ if(page==="profile") updateCount();
 }
 
-function avatar(name){
- return `<div class="avatar">${esc((name||"G").split(" ").map(x=>x[0]).join("").slice(0,2))}</div>`;
-}
-
-function go(p){
- page=p;
- render();
- window.scrollTo(0,0);
-}
-
-/* FOLLOW BUTTON */
-function followButton(handle){
- if(!handle || handle===profile.handle)return "";
- let isFollowing=following.includes(handle);
- return `<button class="${isFollowing?"followingBtn":"followBtn"}"
- onclick="toggleFollow('${esc(handle)}')">
- ${isFollowing?"Following ✓":"＋ Follow"}
- </button>`;
-}
-
-/* FOLLOW / UNFOLLOW ACTION */
-function toggleFollow(handle){
- if(!handle || handle===profile.handle)return;
-
- if(following.includes(handle)){
-  following=following.filter(x=>x!==handle);
-  followerCounts[handle]=Math.max(0,(followerCounts[handle]||0)-1);
-  alert("अब आप "+handle+" को Follow नहीं कर रहे हैं।");
- }else{
-  following.push(handle);
-  followerCounts[handle]=(followerCounts[handle]||0)+1;
-  alert("आपने "+handle+" को Follow कर लिया!");
- }
- save();
- render();
-}
-
-/* FOLLOWER COUNT */
-function getFollowers(handle){
- return followerCounts[handle]||0;
-}
-
-function render(){
- document.querySelectorAll(".mobile button").forEach(b=>b.classList.remove("active"));
- let nav=document.getElementById("n-"+page);
- if(nav)nav.classList.add("active");
-
- let app=document.getElementById("app");
- if(page==="home")app.innerHTML=home();
- if(page==="create")app.innerHTML=create();
- if(page==="friends")app.innerHTML=friendPage();
- if(page==="profile")app.innerHTML=profilePage();
- if(page==="videos")app.innerHTML=videoPage();
- if(page==="search")app.innerHTML=searchPage();
-}
-
-function home(){
- return `<h2>🏠 Home Feed</h2>
- <div class="card">
- <div class="row">${avatar(profile.name)}
- <div><b>${esc(profile.name)}</b><div class="muted">क्या सोच रहे हो?</div></div></div>
- <button style="width:100%;margin-top:12px" onclick="go('create')">＋ Create Post</button>
- </div>
- <div class="card"><input id="searchBox" placeholder="🔍 लोगों और पोस्ट को खोजें" oninput="searchInline(this.value)"></div>
- <div id="searchResults"></div>
- ${posts.map(postCard).join("")||'<div class="card">अभी कोई पोस्ट नहीं है। पहली पोस्ट बनाएँ!</div>'}`;
-}
-
-function postCard(p){
- return `<div class="card">
- <div class="between">
-  <div class="row">${avatar(p.name)}
-   <div><b>${esc(p.name)}</b><div class="muted">${esc(p.handle||"@user")}</div></div>
-  </div>
-  ${p.handle!==profile.handle?followButton(p.handle):""}
- </div>
- <p>${esc(p.text)}</p>
- ${p.photo?`<img class="postphoto" src="${p.photo}">`:""}
- <div class="row" style="margin-top:12px;flex-wrap:wrap">
- <button class="followingBtn" onclick="like(${p.id})">${p.liked?"❤️":"🤍"} ${p.likes} Like</button>
- <button class="followingBtn" onclick="document.getElementById('comment'+${p.id}).focus()">💬 ${p.comments.length} Comment</button>
- <button class="followingBtn" onclick="share(${p.id})">↗ Share</button>
- ${p.own?`<button class="followingBtn" onclick="delPost(${p.id})">Delete</button>`:""}
- </div>
- ${p.comments.map(c=>`<div class="item"><b>${esc(c.name)}</b><p>${esc(c.text)}</p></div>`).join("")}
- <form onsubmit="comment(event,${p.id})" class="row" style="margin-top:12px">
- <input id="comment${p.id}" placeholder="Comment लिखें" required>
- <button>Send</button>
- </form>
- </div>`;
-}
-
-function create(){
- return `<h2>＋ Create New Post</h2>
- <div class="card">
- <textarea id="postText" rows="4" placeholder="क्या सोच रहे हो?"></textarea>
- <label class="muted">फोटो अपलोड करें</label>
- <input type="file" id="postFile" accept="image/*">
- <div id="photoPreview"></div>
- <button style="width:100%;margin-top:15px" onclick="publish()">Publish Post</button>
- </div>`;
-}
-
-function publish(){
- let text=document.getElementById("postText").value.trim();
- let file=document.getElementById("postFile").files[0];
- if(!text&&!file){alert("पोस्ट में कुछ लिखें या फोटो चुनें।");return}
+function addPost(){
+ const text=document.getElementById("postText").value.trim();
+ const file=document.getElementById("postPhoto").files[0];
+ if(!text&&!file){alert("Write something or select a photo");return;}
+ const post={id:Date.now(),text,photo:"",likes:0,comments:[]};
  if(file){
-  if(file.size>1500000){alert("फोटो 1.5 MB से छोटी चुनें।");return}
-  let reader=new FileReader();
-  reader.onload=()=>addPost(text,reader.result);
+  const reader=new FileReader();
+  reader.onload=()=>{
+   post.photo=reader.result;
+   posts.unshift(post);
+   savePosts();
+   renderFeed();
+   document.getElementById("postText").value="";
+   document.getElementById("postPhoto").value="";
+  };
   reader.readAsDataURL(file);
- }else addPost(text,"");
+ }else{
+  posts.unshift(post);
+  savePosts();
+  renderFeed();
+  document.getElementById("postText").value="";
+ }
 }
 
-function addPost(text,photo){
- posts.unshift({
-  id:Date.now(),name:profile.name,handle:profile.handle,
-  text,photo,likes:0,liked:false,comments:[],own:true
+function renderFeed(){
+ const feed=document.getElementById("feed");
+ feed.innerHTML="";
+ posts.forEach(post=>{
+  const card=document.createElement("div");
+  card.className="card post";
+  const heading=document.createElement("b");
+  heading.textContent="Anurag · @guest";
+  card.appendChild(heading);
+  const p=document.createElement("p");
+  p.textContent=post.text;
+  card.appendChild(p);
+  if(post.photo){
+   const img=document.createElement("img");
+   img.src=post.photo;
+   card.appendChild(img);
+  }
+  const like=document.createElement("button");
+  like.textContent="♥ Like ("+post.likes+")";
+  like.onclick=()=>{post.likes++;savePosts();renderFeed();};
+  card.appendChild(like);
+  const commentInput=document.createElement("input");
+  commentInput.placeholder="Write a comment...";
+  card.appendChild(commentInput);
+  const commentButton=document.createElement("button");
+  commentButton.textContent="Comment";
+  commentButton.onclick=()=>{
+   if(commentInput.value.trim()){
+    post.comments.push(commentInput.value.trim());
+    savePosts();
+    renderFeed();
+   }
+  };
+  card.appendChild(commentButton);
+  post.comments.forEach(comment=>{
+   const c=document.createElement("p");
+   c.className="muted";
+   c.textContent="💬 "+comment;
+   card.appendChild(c);
+  });
+  feed.appendChild(card);
  });
- save();
- go("home");
+ updateCount();
 }
 
-function like(id){
- let p=posts.find(x=>x.id===id);
- if(!p)return;
- p.liked=!p.liked;
- p.likes+=p.liked?1:-1;
- save();
- render();
+function updateCount(){
+ document.getElementById("postCount").textContent=posts.length;
 }
 
-function comment(e,id){
- e.preventDefault();
- let input=document.getElementById("comment"+id);
- let text=input.value.trim();
- if(!text)return;
- let p=posts.find(x=>x.id===id);
- if(!p)return;
- p.comments.push({name:profile.name,text});
- save();
- render();
+function searchPosts(){
+ const q=document.getElementById("searchText").value.toLowerCase();
+ const results=document.getElementById("searchResults");
+ results.innerHTML="";
+ posts.filter(p=>p.text.toLowerCase().includes(q)).forEach(p=>{
+  const item=document.createElement("div");
+  item.className="card";
+  item.textContent=p.text;
+  results.appendChild(item);
+ });
 }
 
-function delPost(id){
- if(!confirm("क्या यह पोस्ट हटानी है?"))return;
- posts=posts.filter(p=>p.id!==id);
- save();
- render();
-}
-
-function share(id){
- let p=posts.find(x=>x.id===id);
- if(!p)return;
- if(navigator.share)navigator.share({title:"Fedbook",text:p.text}).catch(()=>{});
- else alert("इस पोस्ट को शेयर करने के लिए उसका टेक्स्ट कॉपी करें:\n"+p.text);
-}
-
-/* FRIENDS PAGE + FOLLOW */
-function friendPage(){
- let req=friends.filter(x=>x.status==="request");
- let all=friends.filter(x=>x.status==="friend");
- let suggestions=friends.filter(x=>x.status==="suggestion");
-
- return `<h2>👥 Friends & People</h2>
-
- <div class="card">
- <h3>Friend Requests (${req.length})</h3>
- ${req.map(f=>`
- <div class="item between">
-  <div class="row">${avatar(f.name)}<b>${esc(f.name)}</b></div>
-  <button onclick="accept(${f.id})">Accept</button>
- </div>`).join("")||'<p class="muted">कोई नई request नहीं।</p>'}
- </div>
-
- <div class="card">
- <h3>My Friends (${all.length})</h3>
- ${all.map(f=>`
- <div class="item between">
-  <div class="row">${avatar(f.name)}
-   <div><b>${esc(f.name)}</b><div class="muted">${esc(f.handle)}</div></div>
-  </div>
-  ${followButton(f.handle)}
- </div>`).join("")||"अभी कोई दोस्त नहीं।"}
- </div>
-
- <div class="card">
- <h3>People You May Know</h3>
- ${suggestions.map(f=>`
- <div class="item between">
-  <div class="row">${avatar(f.name)}
-   <div><b>${esc(f.name)}</b><div class="muted">${esc(f.handle)}</div></div>
-  </div>
-  <div class="row">
-   ${followButton(f.handle)}
-   <button onclick="request(${f.id})">Add Friend</button>
-  </div>
- </div>`).join("")||"कोई सुझाव नहीं।"}
- </div>`;
-}
-
-function accept(id){
- let f=friends.find(x=>x.id===id);
- if(f)f.status="friend";
- save();
- render();
-}
-
-function request(id){
- let f=friends.find(x=>x.id===id);
- if(f)f.status="requested";
- save();
- render();
-}
-
-/* PROFILE WITH FOLLOWER COUNTS */
-function profilePage(){
- return `<h2>👤 My Profile</h2>
- <div class="card">
- <div class="row">${avatar(profile.name)}
-  <div><h3>${esc(profile.name)}</h3><div class="muted">${esc(profile.handle)}</div></div>
- </div>
- <p>${esc(profile.bio)}</p>
-
- <div class="stats">
-  <div><b>${posts.filter(p=>p.own).length}</b><div class="muted">Posts</div></div>
-  <div><b>${getFollowers(profile.handle)}</b><div class="muted">Followers</div></div>
-  <div><b>${following.length}</b><div class="muted">Following</div></div>
- </div>
- </div>
-
- <div class="card">
- <h3>Following (${following.length})</h3>
- ${following.map(handle=>`
- <div class="item between">
-  <b>${esc(handle)}</b>
-  ${followButton(handle)}
- </div>`).join("")||'<p class="muted">अभी आप किसी को Follow नहीं कर रहे हैं।</p>'}
- </div>
-
- <div class="card">
- <h3>Edit Profile</h3>
- <label class="muted">आपका नाम</label>
- <input id="pname" value="${esc(profile.name)}">
- <label class="muted">Username</label>
- <input id="phandle" value="${esc(profile.handle)}">
- <label class="muted">Bio</label>
- <textarea id="pbio">${esc(profile.bio)}</textarea>
- <button style="width:100%" onclick="saveProfile()">Save Profile</button>
- </div>`;
-}
-
-function saveProfile(){
- let name=document.getElementById("pname").value.trim();
- let handle=document.getElementById("phandle").value.trim();
- let bio=document.getElementById("pbio").value.trim();
-
- if(!name){alert("नाम लिखें");return}
-
- handle=handle.replace(/^@/,"").replace(/[^a-zA-Z0-9_.]/g,"").toLowerCase();
- if(!handle){alert("सही Username लिखें");return}
-
- profile.name=name;
- profile.handle="@"+handle;
- profile.bio=bio;
-
- save();
- render();
- alert("Profile सेव हो गई!");
-}
-
-function videoPage(){
- return `<h2>🎬 Fedbook Videos</h2>
- <div class="card">
- <h3>Upload Video</h3>
- <input type="file" id="videoFile" accept="video/*">
- <button style="width:100%;margin-top:12px" onclick="uploadVideo()">Upload</button>
- </div>
- ${videos.map((v,i)=>`
- <div class="card">
-  <b>${esc(v.name)}</b>
-  <video controls src="${v.url}"></video>
-  <button class="followingBtn" onclick="deleteVideo(${i})">Delete Video</button>
- </div>`).join("")}`;
-}
-
-function uploadVideo(){
- let f=document.getElementById("videoFile").files[0];
- if(!f){alert("पहले वीडियो चुनें");return}
- if(f.size>5000000){alert("अभी 5 MB तक की वीडियो चुनें।");return}
- let reader=new FileReader();
- reader.onload=()=>{
-  videos.unshift({name:f.name,url:reader.result});
-  save();
-  render();
- };
- reader.readAsDataURL(f);
-}
-
-function deleteVideo(i){
- videos.splice(i,1);
- save();
- render();
-}
-
-function searchInline(q){
- let r=document.getElementById("searchResults");
- if(!r)return;
- if(!q.trim()){r.innerHTML="";return}
-
- let matches=posts.filter(p=>
-  p.name.toLowerCase().includes(q.toLowerCase())||
-  p.text.toLowerCase().includes(q.toLowerCase())
- );
-
- r.innerHTML=matches.map(postCard).join("")||
- '<div class="card">कोई पोस्ट नहीं मिली।</div>';
-}
-
-function searchPage(){
- return `<h2>🔍 Search</h2>
- <div class="card">
- <input placeholder="Search posts..." oninput="searchInline(this.value)">
- </div>
- <div id="searchResults"></div>`;
-}
-
-render();
+renderFeed();
 </script>
 </body>
 </html>
