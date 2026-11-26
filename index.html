@@ -484,5 +484,130 @@ const supabaseClient = window.supabase.createClient(
 
 console.log("Fedbook Supabase Connected!");
 </script>
+<!-- FEDBOOK SIGNUP & LOGIN -->
+<div id="fedbook-auth" style="max-width:420px;margin:25px auto;padding:20px;background:#111d31;color:white;border-radius:15px;font-family:Arial">
+  <h2 style="text-align:center">Fedbook</h2>
+  <h3>Create Account / Login</h3>
+
+  <input id="fb-name" placeholder="Your Name" style="width:100%;padding:12px;margin:6px 0;box-sizing:border-box">
+  <input id="fb-username" placeholder="Username" style="width:100%;padding:12px;margin:6px 0;box-sizing:border-box">
+
+  <input id="fb-email" type="email" placeholder="Email (optional)" style="width:100%;padding:12px;margin:6px 0;box-sizing:border-box">
+  <input id="fb-phone" type="tel" placeholder="Mobile with country code, e.g. +91..." style="width:100%;padding:12px;margin:6px 0;box-sizing:border-box">
+  <input id="fb-password" type="password" placeholder="Password" style="width:100%;padding:12px;margin:6px 0;box-sizing:border-box">
+
+  <button onclick="fbSignup()" style="width:100%;padding:12px;margin:6px 0;background:#168cff;color:white;border:0;border-radius:8px">Create Account</button>
+  <button onclick="fbLogin()" style="width:100%;padding:12px;margin:6px 0;background:#263b59;color:white;border:0;border-radius:8px">Login</button>
+
+  <hr>
+  <p>Mobile OTP verification</p>
+  <input id="fb-otp" placeholder="Enter OTP" style="width:100%;padding:12px;box-sizing:border-box">
+  <button onclick="fbVerifyPhone()" style="width:100%;padding:12px;margin-top:8px;background:#168cff;color:white;border:0;border-radius:8px">Verify Mobile OTP</button>
+
+  <p id="fb-message" style="overflow-wrap:anywhere"></p>
+  <button onclick="fbLogout()" style="padding:10px;background:#555;color:white;border:0;border-radius:8px">Logout</button>
+</div>
+
+<script>
+function fbMessage(message) {
+  document.getElementById("fb-message").textContent = message;
+}
+
+async function fbSignup() {
+  const name = document.getElementById("fb-name").value.trim();
+  const username = document.getElementById("fb-username").value.trim();
+  const email = document.getElementById("fb-email").value.trim();
+  const phone = document.getElementById("fb-phone").value.trim();
+  const password = document.getElementById("fb-password").value;
+
+  if (!username || !password || (!email && !phone)) {
+    return fbMessage("Username, password aur email ya mobile number bharo.");
+  }
+
+  const contact = email ? { email } : { phone };
+
+  const { data, error } = await supabaseClient.auth.signUp({
+    ...contact,
+    password,
+    options: {
+      data: {
+        full_name: name,
+        username: username
+      }
+    }
+  });
+
+  if (error) return fbMessage(error.message);
+
+  if (email) {
+    fbMessage("Signup request sent. Email inbox check karke confirmation link kholo, phir login karo.");
+  } else {
+    fbMessage("Mobile par OTP bheja gaya hai. OTP bhar kar Verify Mobile OTP dabao.");
+  }
+}
+
+async function fbLogin() {
+  const email = document.getElementById("fb-email").value.trim();
+  const phone = document.getElementById("fb-phone").value.trim();
+  const password = document.getElementById("fb-password").value;
+
+  if ((!email && !phone) || !password) {
+    return fbMessage("Email ya mobile number aur password bharo.");
+  }
+
+  const contact = email ? { email } : { phone };
+
+  const { data, error } = await supabaseClient.auth.signInWithPassword({
+    ...contact,
+    password
+  });
+
+  if (error) return fbMessage(error.message);
+
+  await fbSaveProfile(data.user);
+  fbMessage("Login successful! Welcome to Fedbook.");
+}
+
+async function fbVerifyPhone() {
+  const phone = document.getElementById("fb-phone").value.trim();
+  const token = document.getElementById("fb-otp").value.trim();
+
+  if (!phone || !token) {
+    return fbMessage("Mobile number aur OTP bharo.");
+  }
+
+  const { data, error } = await supabaseClient.auth.verifyOtp({
+    phone,
+    token,
+    type: "sms"
+  });
+
+  if (error) return fbMessage(error.message);
+
+  await fbSaveProfile(data.user);
+  fbMessage("Mobile verified! Fedbook account ready.");
+}
+
+async function fbSaveProfile(user) {
+  const username = user.user_metadata?.username;
+  if (!username) return;
+
+  const { error } = await supabaseClient
+    .from("profiles")
+    .upsert({
+      id: user.id,
+      username,
+      full_name: user.user_metadata?.full_name || ""
+    });
+
+  if (error) console.error("Profile save error:", error.message);
+}
+
+async function fbLogout() {
+  const { error } = await supabaseClient.auth.signOut();
+  fbMessage(error ? error.message : "You are logged out.");
+}
+</script>
+ 
 </body>
 </html>
