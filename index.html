@@ -1,473 +1,316 @@
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Fedbook</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
+:root{
+ --bg:#080d18;--card:#111d31;--border:#243653;
+ --blue:#168cff;--text:#eef4fc;--muted:#91a8c5;
+}
 *{box-sizing:border-box}
-body{margin:0;background:#080d18;color:#eef4fc;font-family:Arial}
-header{background:#111d31;padding:15px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:5}
-header h2{margin:0;color:#168cff}
-button{background:#168cff;color:white;border:0;padding:10px 14px;border-radius:8px;cursor:pointer}
-input,textarea{width:100%;padding:12px;margin:6px 0;background:#0b1424;color:white;border:1px solid #33445f;border-radius:8px}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Arial}
+header{
+ background:var(--card);padding:14px;
+ display:flex;justify-content:space-between;
+ align-items:center;position:sticky;top:0;z-index:5;
+ border-bottom:1px solid var(--border)
+}
+header h2{margin:0;color:var(--blue)}
 main{max-width:650px;margin:18px auto;padding:10px}
-.card{background:#111d31;border:1px solid #243653;border-radius:13px;padding:15px;margin-bottom:14px}
-.hidden{display:none}
-.muted{color:#91a8c5;font-size:13px}
-.postimg{width:100%;max-height:420px;object-fit:cover;border-radius:9px;margin-top:10px}
-.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.card{
+ background:var(--card);border:1px solid var(--border);
+ border-radius:14px;padding:15px;margin-bottom:14px
+}
+input,textarea{
+ width:100%;padding:12px;margin:7px 0;
+ background:#0b1424;color:white;
+ border:1px solid #33445f;border-radius:8px
+}
+button{
+ background:var(--blue);color:white;border:0;
+ padding:11px 15px;border-radius:8px;cursor:pointer;
+ margin:3px
+}
+.hidden{display:none!important}
+.muted{color:var(--muted);font-size:13px}
+.actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
 .actions button{background:#263b59}
+.avatar{
+ width:75px;height:75px;border-radius:50%;
+ background:var(--blue);display:flex;
+ align-items:center;justify-content:center;
+ font-size:28px;margin:auto
+}
 .profiletop{text-align:center}
-.avatar{width:75px;height:75px;border-radius:50%;background:#168cff;display:inline-flex;align-items:center;justify-content:center;font-size:30px}
-#message{overflow-wrap:anywhere;color:#8fc5ff}
-a{color:#8fc5ff}
+.postimg{width:100%;max-height:420px;object-fit:cover;border-radius:10px;margin-top:10px}
+.verified{
+ display:inline-flex;align-items:center;justify-content:center;
+ background:#168cff;color:white;border-radius:50%;
+ width:19px;height:19px;font-size:13px
+}
+#message{color:#8fc5ff;overflow-wrap:anywhere}
+nav{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}
+nav button{flex:1}
 </style>
 </head>
 <body>
 
 <header>
 <h2>FB Fedbook</h2>
-<button onclick="logout()">Logout</button>
+<button id="logoutBtn" class="hidden" onclick="logout()">Logout</button>
 </header>
 
 <main>
+
+<!-- LOGIN / SIGNUP -->
 <section id="auth" class="card">
 <h2>Welcome to Fedbook</h2>
+
 <div id="signupFields">
-<input id="name" placeholder="Your full name">
-<input id="username" placeholder="Username">
+<input id="name" placeholder="Your Full Name">
 </div>
-<input id="email" type="email" placeholder="Email (email login ke liye)">
-<input id="phone" type="tel" placeholder="Mobile with country code (+91...)">
+
+<input id="username" placeholder="Username">
 <input id="password" type="password" placeholder="Password">
+
 <div class="actions">
 <button onclick="signup()">Create Account</button>
 <button onclick="login()">Login</button>
 </div>
-<p class="muted">Email ya mobile number mein se ek bharna zaroori hai.</p>
+
+<p class="muted">
+Username: 3-20 letters, numbers or underscore.
+Password: minimum 8 characters.
+</p>
 <p id="message"></p>
 </section>
 
+<!-- MAIN APP -->
 <section id="app" class="hidden">
-<div class="card profiletop">
-<div class="avatar" id="avatar">F</div>
-<h2 id="myname">My Profile</h2>
-<p id="myusername" class="muted"></p>
-<p id="counts"></p>
-<input id="editname" placeholder="Change full name">
-<button onclick="saveProfile()">Save Profile</button>
-</div>
+
+<nav>
+<button onclick="showSection('home')">Home</button>
+<button onclick="showSection('profile')">Profile</button>
+<button onclick="showSection('search')">Search</button>
+<button onclick="showSection('official')">Official</button>
+</nav>
+
+<!-- HOME -->
+<div id="homeSection">
 
 <div class="card">
-<h3>Create a post</h3>
+<h3>Create a Post</h3>
 <textarea id="caption" placeholder="What's on your mind?"></textarea>
 <input id="photo" type="file" accept="image/*">
 <button onclick="createPost()">Publish Post</button>
 <p id="postmessage" class="muted"></p>
 </div>
 
+<h2>Feed</h2>
+<div id="feed"></div>
+</div>
+
+<!-- PROFILE -->
+<div id="profileSection" class="hidden">
+<div class="card profiletop">
+<div class="avatar" id="avatar">F</div>
+<h2 id="myname">My Profile</h2>
+<p id="myusername" class="muted"></p>
+<p id="counts"></p>
+<input id="editname" placeholder="Change your name">
+<button onclick="saveProfile()">Save Profile</button>
+</div>
+</div>
+
+<!-- SEARCH -->
+<div id="searchSection" class="hidden">
 <div class="card">
 <h3>Search People</h3>
 <input id="searchtext" placeholder="Search username">
 <button onclick="searchPeople()">Search</button>
 <div id="searchresults"></div>
 </div>
+</div>
 
-<h2>Feed</h2>
-<div id="feed"></div>
+<!-- OFFICIAL -->
+<div id="officialSection" class="hidden">
+<div class="card">
+<h2>Fedbook Official</h2>
+<div class="avatar">FB</div>
+<h3 id="officialName">Fedbook Official</h3>
+<p id="officialUsername" class="muted">@fedbook_official</p>
+<p id="officialBio">Welcome to Fedbook! Connect, Share and Discover.</p>
+<p id="officialStats">Official account setup pending.</p>
+<div id="officialBadge"></div>
+</div>
+</div>
+
 </section>
 </main>
 
 <script>
-const SUPABASE_URL = "https://eyvwfkavwppghmbjimgk.supabase.co";
-const SUPABASE_KEY = "sb_publishable_MC_4M9VxUmd5mZ1-r4Rs4g_eVZ8GxCG";
-const db = window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const SUPABASE_URL =
+"https://eyvwfkavwppghmbjimgk.supabase.co";
 
-const CLOUD_NAME = "g1vmdztf";
-const UPLOAD_PRESET = "Fedbook_upload";
+const SUPABASE_KEY =
+"sb_publishable_MC_4M9VxUmd5mZ1-r4Rs4g_eVZ8GxCG";
 
-let currentUser = null;
-let myProfile = null;
+const db = window.supabase.createClient(
+SUPABASE_URL,SUPABASE_KEY
+);
 
-function el(id){return document.getElementById(id)}
-function msg(text){el("message").textContent=text}
+const CLOUD_NAME="g1vmdztf";
+const UPLOAD_PRESET="Fedbook_upload";
+
+let currentUser=null;
+let myProfile=null;
+
+function el(id){
+ return document.getElementById(id);
+}
+
 function safe(value){
- return String(value ?? "").replace(/[&<>"']/g,c=>({
- "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+ return String(value??"").replace(/[&<>"']/g,c=>({
+ "&":"&amp;","<":"&lt;",">":"&gt;",
+ '"':"&quot;","'":"&#39;"
  }[c]));
 }
 
-async function signup(){
- const name=el("name").value.trim();
+function message(text){
+ el("message").textContent=text;
+}
+
+function showSection(name){
+ ["home","profile","search","official"].forEach(x=>{
+  el(x+"Section").classList.toggle("hidden",x!==name);
+ });
+}
+
+async function authRequest(action){
  const username=el("username").value.trim().toLowerCase();
- const email=el("email").value.trim();
- const phone=el("phone").value.trim();
  const password=el("password").value;
 
- if(!username || !password || (!email && !phone)){
-  return msg("Name, username, password aur email ya phone bharo.");
- }
  if(!/^[a-z0-9_]{3,20}$/.test(username)){
-  return msg("Username 3-20 letters, numbers ya underscore ka hona chahiye.");
+  throw new Error("Username 3-20 characters ka hona chahiye.");
  }
- if(password.length<6) return msg("Password kam se kam 6 characters ka rakho.");
+ if(password.length<8){
+  throw new Error("Password kam se kam 8 characters ka rakho.");
+ }
 
- const contact=email?{email}:{phone};
- const {data,error}=await db.auth.signUp({
-  ...contact,
-  password,
-  options:{data:{full_name:name,username}}
+ const {data,error}=await db.functions.invoke("username-auth",{
+  body:{action,username,password}
  });
 
- if(error) return msg(error.message);
+ if(error) throw error;
+ if(data?.error) throw new Error(data.error);
+ return data;
+}
 
- if(data.session){
-  currentUser=data.user;
-  await ensureProfile();
-  await startApp();
- }else{
-  msg(email
-   ?"Email confirmation link kholo, phir login karo."
-   :"SMS OTP verification ke liye Supabase Phone Provider setup zaroori hai.");
+async function signup(){
+ try{
+  const name=el("name").value.trim();
+  if(!name) return message("Apna naam bharo.");
+
+  message("Account ban raha hai...");
+
+  await authRequest("signup");
+
+  message("Account ban gaya! Ab apne Username aur Password se Login karo.");
+ }catch(e){
+  message(e.message);
  }
 }
 
 async function login(){
- const email=el("email").value.trim();
- const phone=el("phone").value.trim();
- const password=el("password").value;
- if((!email&&!phone)||!password) return msg("Email ya phone aur password bharo.");
+ try{
+  message("Login ho raha hai...");
 
- const {data,error}=await db.auth.signInWithPassword({
-  ...(email?{email}:{phone}),password
- });
- if(error) return msg(error.message);
- currentUser=data.user;
- await ensureProfile();
- await startApp();
+  const data=await authRequest("login");
+
+  if(!data.session){
+   throw new Error("Login session nahi mila.");
+  }
+
+  const {error}=await db.auth.setSession({
+   access_token:data.session.access_token,
+   refresh_token:data.session.refresh_token
+  });
+
+  if(error) throw error;
+
+  const {data:sessionData}=await db.auth.getSession();
+  currentUser=sessionData.session.user;
+
+  await ensureProfile();
+  await startApp();
+
+ }catch(e){
+  message(e.message);
+ }
 }
 
 async function ensureProfile(){
- if(!currentUser) return;
- const username=currentUser.user_metadata?.username ||
-  ("user_"+currentUser.id.slice(0,8));
- const full_name=currentUser.user_metadata?.full_name || "";
+ const {data,error}=await db.from("profiles")
+  .select("*").eq("id",currentUser.id).maybeSingle();
 
- const {data,error}=await db.from("profiles").upsert({
-  id:currentUser.id,username,full_name
- },{onConflict:"id"}).select().single();
+ if(error) throw error;
 
- if(error){
-  console.error(error);
-  msg("Profile save error: "+error.message);
+ if(data){
+  myProfile=data;
   return;
  }
- myProfile=data;
+
+ const username=currentUser.user_metadata?.username ||
+  ("user_"+currentUser.id.slice(0,8));
+
+ const {data:newProfile,error:insertError}=await db
+  .from("profiles").insert({
+   id:currentUser.id,
+   username,
+   full_name:username
+  }).select().single();
+
+ if(insertError) throw insertError;
+ myProfile=newProfile;
 }
 
 async function startApp(){
  el("auth").classList.add("hidden");
  el("app").classList.remove("hidden");
+ el("logoutBtn").classList.remove("hidden");
+
  await loadProfile(currentUser.id);
  await loadFeed();
+ await loadOfficial();
+ showSection("home");
 }
 
 async function loadProfile(userId){
  const {data,error}=await db.from("profiles")
   .select("*").eq("id",userId).maybeSingle();
- if(error || !data) return;
+
+ if(error||!data) return;
  myProfile=data;
 
- el("myname").textContent=data.full_name || data.username;
+ el("myname").textContent=data.full_name||data.username;
  el("myusername").textContent="@"+data.username;
- el("avatar").textContent=(data.full_name || data.username || "F")[0].toUpperCase();
- el("editname").value=data.full_name || "";
+ el("avatar").textContent=(data.full_name||data.username||"F")[0].toUpperCase();
+ el("editname").value=data.full_name||"";
 
  const {count:followers}=await db.from("follows")
-  .select("*",{count:"exact",head:true}).eq("following_id",userId);
+  .select("*",{count:"exact",head:true})
+  .eq("following_id",userId);
+
  const {count:following}=await db.from("follows")
-  .select("*",{count:"exact",head:true}).eq("follower_id",userId);
+  .select("*",{count:"exact",head:true})
+  .eq("follower_id",userId);
 
- el("counts").textContent=
-  (followers||0)+" Followers  ·  "+(following||0)+" Following";
+ el("counts")=(followers||0)+" Followers · "+(following||0)+" Following";
 }
-
-async function saveProfile(){
- if(!currentUser)return;
- const full_name=el("editname").value.trim();
- const {error}=await db.from("profiles")
-  .update({full_name}).eq("id",currentUser.id);
- if(error)return alert(error.message);
- await loadProfile(currentUser.id);
- alert("Profile updated!");
-}
-
-async function createPost(){
- const caption=el("caption").value.trim();
- const file=el("photo").files[0];
- if(!caption&&!file)return alert("Post mein text ya photo add karo.");
- let image_url=null;
-
- if(file){
-  el("postmessage").textContent="Photo uploading...";
-  const form=new FormData();
-  form.append("file",file);
-  form.append("upload_preset",UPLOAD_PRESET);
-
-  try{
-   const response=await fetch(
-    "https://api.cloudinary.com/v1_1/"+CLOUD_NAME+"/image/upload",
-    {method:"POST",body:form}
-   );
-   const result=await response.json();
-   if(!response.ok)throw new Error(result.error?.message||"Upload failed");
-   image_url=result.secure_url;
-  }catch(e){
-   return el("postmessage").textContent="Photo upload error: "+e.message;
-  }
- }
-
- const {error}=await db.from("posts").insert({
-  user_id:currentUser.id,caption,image_url
- });
- if(error)return el("postmessage").textContent=error.message;
-
- el("caption").value="";
- el("photo").value="";
- el("postmessage").textContent="Post published!";
- await loadFeed();
-}
-
-async function loadFeed(){
- const {data,error}=await db.from("posts")
-  .select("id,user_id,caption,image_url,created_at,profiles(username,full_name)")
-  .order("created_at",{ascending:false}).limit(50);
-
- if(error){
-  el("feed").textContent="Feed error: "+error.message;
-  return;
- }
-
- el("feed").innerHTML="";
- if(!data.length){
-  el("feed").textContent="Abhi koi post nahi hai. Pehli post tum karo!";
-  return;
- }
-
- for(const post of data){
-  const {count}=await db.from("likes")
-   .select("*",{count:"exact",head:true}).eq("post_id",post.id);
-  const {data:liked}=await db.from("likes")
-   .select("post_id").eq("post_id",post.id).eq("user_id",currentUser.id).maybeSingle();
-
-  const username=post.profiles?.username || "User";
-  const name=post.profiles?.full_name || username;
-  const card=document.createElement("div");
-  card.className="card";
-  card.innerHTML=`
-   <b>${safe(name)}</b>
-   <p class="muted">@${safe(username)}</p>
-   <p>${safe(post.caption)}</p>
-   ${post.image_url?`<img class="postimg" src="${safe(post.image_url)}" alt="Post image">`:""}
-   <div class="actions">
-    <button onclick="toggleLike(${post.id},${!!liked})">${liked?"♥ Liked":"♡ Like"} · ${count||0}</button>
-    ${post.user_id===currentUser.id?`<button onclick="deletePost(${post.id})">Delete</button>`:""}
-   </div>`;
-  el("feed").appendChild(card);
- }
-}
-
-async function toggleLike(postId,alreadyLiked){
- if(alreadyLiked){
-  const {error}=await db.from("likes").delete()
-   .eq("post_id",postId).eq("user_id",currentUser.id);
-  if(error)return alert(error.message);
- }else{
-  const {error}=await db.from("likes").insert({
-   post_id:postId,user_id:currentUser.id
-  });
-  if(error)return alert(error.message);
- }
- await loadFeed();
-}
-
-async function deletePost(postId){
- if(!confirm("Delete this post?"))return;
- const {error}=await db.from("posts").delete()
-  .eq("id",postId).eq("user_id",currentUser.id);
- if(error)return alert(error.message);
- await loadFeed();
-}
-
-async function searchPeople(){
- const term=el("searchtext").value.trim();
- if(!term)return;
- const {data,error}=await db.from("profiles")
-  .select("id,username,full_name").ilike("username","%"+term+"%").limit(20);
- if(error)return el("searchresults").textContent=error.message;
-
- el("searchresults").innerHTML="";
- for(const person of data){
-  const div=document.createElement("div");
-  div.className="card";
-  div.innerHTML=`<b>${safe(person.full_name||person.username)}</b>
-   <p class="muted">@${safe(person.username)}</p>
-   <button>View Profile</button>`;
-  div.querySelector("button").onclick=()=>viewPerson(person.id);
-  el("searchresults").appendChild(div);
- }
-}
-
-async function viewPerson(id){
- if(id===currentUser.id){
-  await loadProfile(id);
-  return;
- }
- const {data,error}=await db.from("profiles")
-  .select("*").eq("id",id).maybeSingle();
- if(error||!data)return alert(error?.message||"Profile not found");
-
- const {count:followers}=await db.from("follows")
-  .select("*",{count:"exact",head:true}).eq("following_id",id);
- const {count:following}=await db.from("follows")
-  .select("*",{count:"exact",head:true}).eq("follower_id",id);
- const {data:relation}=await db.from("follows")
-  .select("*").eq("follower_id",currentUser.id)
-  .eq("following_id",id).maybeSingle();
-
- const follow=relation?"Unfollow":"Follow";
- const ok=confirm(
-  data.full_name+" (@"+data.username+")\n"+
-  (followers||0)+" Followers · "+(following||0)+" Following\n\n"+
-  "Press OK to "+follow+"."
- );
- if(!ok)return;
-
- if(relation){
-  const {error}=await db.from("follows").delete()
-   .eq("follower_id",currentUser.id).eq("following_id",id);
-  if(error)return alert(error.message);
- }else{
-  const {error}=await db.from("follows").insert({
-   follower_id:currentUser.id,following_id:id
-  });
-  if(error)return alert(error.message);
- }
- alert("Done!");
-}
-
-async function logout(){
- const {error}=await db.auth.signOut();
- if(error)return alert(error.message);
- currentUser=null;
- location.reload();
-}
-
-(async()=>{
- const {data}=await db.auth.getSession();
- if(data.session){
-  currentUser=data.session.user;
-  await ensureProfile();
-  await startApp();
- }
-})();
-</script><!-- FEDBOOK OFFICIAL PROFILE -->
-<style>
-.official-profile {
-  background: #111d31;
-  border: 1px solid #243653;
-  border-radius: 18px;
-  padding: 20px;
-  margin: 15px;
-  color: white;
-  font-family: Arial, sans-serif;
-}
-.official-top {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-.official-logo {
-  width: 65px;
-  height: 65px;
-  border-radius: 50%;
-  background: #080d18;
-  border: 2px solid #168cff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 27px;
-  font-weight: bold;
-  color: white;
-}
-.official-name {
-  font-size: 19px;
-  font-weight: bold;
-}
-.blue-tick {
-  display: inline-flex;
-  background: #168cff;
-  color: white;
-  border-radius: 50%;
-  width: 19px;
-  height: 19px;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-}
-.official-stats {
-  display: flex;
-  justify-content: space-around;
-  margin-top: 22px;
-  text-align: center;
-}
-.official-stats strong {
-  display: block;
-  font-size: 19px;
-}
-.official-follow {
-  width: 100%;
-  margin-top: 18px;
-  padding: 12px;
-  background: #168cff;
-  color: white;
-  border: 0;
-  border-radius: 10px;
-  font-weight: bold;
-  font-size: 15px;
-}
-</style>
-
-<div class="official-profile">
-  <div class="official-top">
-    <div class="official-logo">FB</div>
-    <div>
-      <div class="official-name">
-        Fedbook Official
-        <span class="blue-tick">✓</span>
-      </div>
-      <div style="color:#91a8c5">@fedbook_official</div>
-      <div style="color:#91a8c5;margin-top:5px">
-        Official Fedbook Account
-      </div>
-    </div>
-  </div>
-
-  <p>Welcome to Fedbook! Connect, Share and Discover.</p>
-
-  <div class="official-stats">
-    <div><strong>0</strong>Posts</div>
-    <div><strong>0</strong>Followers</div>
-    <div><strong>0</strong>Following</div>
-  </div>
-
-  <button class="official-follow"
-    onclick="alert('Fedbook Official')">
-    Official Profile
-  </button>
-</div>
+</script>
 </body>
 </html>
