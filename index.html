@@ -3,217 +3,473 @@
 <html lang="hi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Fedbook</title>
+
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#080d18;color:#eef4fc;font-family:Arial}
-header,nav{background:#111d31;padding:15px;display:flex;justify-content:space-around;align-items:center;position:sticky;top:0}
-.logo{color:#168cff;font-size:25px;font-weight:bold}
-button{background:#168cff;color:white;border:0;padding:10px 14px;border-radius:8px;margin:4px;cursor:pointer}
-input{background:#080d18;color:white;border:1px solid #243653;padding:12px;border-radius:8px;width:100%;margin:8px 0}
-main{max-width:650px;margin:auto;padding:12px}
-.card{background:#111d31;border:1px solid #243653;border-radius:12px;padding:16px;margin:12px 0}
-.avatar{width:65px;height:65px;border-radius:50%;background:#168cff;display:grid;place-items:center;font-size:25px;font-weight:bold}
-.stats{display:flex;justify-content:space-around;text-align:center;margin:20px 0}
-.stats button{background:transparent;color:#eef4fc}
-.stats strong{display:block;color:#168cff;font-size:20px}
-.user{display:flex;align-items:center;gap:12px}
-.hidden{display:none}
-.muted{color:#91a8c5;font-size:13px}
+body{
+ margin:0;
+ background:#080d18;
+ color:white;
+ font-family:Arial,sans-serif;
+}
+header{
+ background:#111d31;
+ padding:15px;
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ position:sticky;
+ top:0;
+ z-index:10;
+ border-bottom:1px solid #243653;
+}
+.logo{
+ font-size:26px;
+ font-weight:bold;
+ color:#168cff;
+}
+header button{
+ background:#243653;
+ color:white;
+ border:0;
+ padding:10px;
+ border-radius:8px;
+}
+.search{
+ padding:12px;
+ background:#111d31;
+}
+.search input{
+ width:100%;
+ padding:12px;
+ border:0;
+ border-radius:10px;
+ background:#243653;
+ color:white;
+}
+.stories{
+ display:flex;
+ gap:12px;
+ overflow-x:auto;
+ padding:15px;
+ background:#111d31;
+}
+.story{
+ min-width:65px;
+ text-align:center;
+ font-size:12px;
+}
+.story img{
+ width:58px;
+ height:58px;
+ border-radius:50%;
+ border:3px solid #168cff;
+ object-fit:cover;
+}
+.create{
+ margin:12px;
+ padding:15px;
+ background:#111d31;
+ border-radius:12px;
+}
+.create textarea{
+ width:100%;
+ padding:12px;
+ background:#243653;
+ color:white;
+ border:0;
+ border-radius:8px;
+ resize:vertical;
+}
+.create button,.post button{
+ padding:10px 13px;
+ border:0;
+ border-radius:8px;
+ background:#243653;
+ color:white;
+ cursor:pointer;
+}
+.create .publish{
+ background:#168cff;
+ margin-top:10px;
+}
+.post{
+ margin:12px;
+ background:#111d31;
+ border:1px solid #243653;
+ border-radius:12px;
+ overflow:hidden;
+}
+.post-head{
+ display:flex;
+ align-items:center;
+ gap:10px;
+ padding:12px;
+}
+.avatar{
+ width:42px;
+ height:42px;
+ border-radius:50%;
+ object-fit:cover;
+}
+.author{
+ font-weight:bold;
+}
+.demo{
+ font-size:10px;
+ color:#91a8c5;
+}
+.post-text{
+ padding:0 12px 12px;
+}
+.post-photo{
+ width:100%;
+ display:block;
+ max-height:450px;
+ object-fit:cover;
+}
+.stats{
+ display:flex;
+ justify-content:space-between;
+ padding:10px 12px;
+ color:#91a8c5;
+ font-size:13px;
+}
+.actions{
+ display:flex;
+ justify-content:space-around;
+ padding:10px;
+ border-top:1px solid #243653;
+}
+.actions button{
+ flex:1;
+ margin:2px;
+}
+.actions .liked{
+ color:#168cff;
+}
+.comment-area{
+ padding:10px;
+ border-top:1px solid #243653;
+}
+.comment-area input{
+ width:75%;
+ padding:10px;
+ background:#243653;
+ border:0;
+ color:white;
+ border-radius:8px;
+}
+.comment-area button{
+ background:#168cff;
+}
+.comments{
+ padding:0 12px 12px;
+ font-size:13px;
+ color:#cbd5e1;
+}
+nav{
+ position:sticky;
+ bottom:0;
+ background:#111d31;
+ display:flex;
+ justify-content:space-around;
+ padding:13px;
+ border-top:1px solid #243653;
+}
+nav button{
+ background:none;
+ border:0;
+ color:white;
+ font-size:20px;
+}
+footer{
+ text-align:center;
+ color:#91a8c5;
+ padding:20px;
+ font-size:12px;
+}
 </style>
 </head>
+
 <body>
 
 <header>
  <div class="logo">FB Fedbook</div>
- <button onclick="openProfile(currentUser)">My Profile</button>
+ <button onclick="window.scrollTo(0,0)">⌂ Home</button>
 </header>
 
+<div class="search">
+ <input id="search" placeholder="पोस्ट खोजें..."
+ oninput="renderPosts()">
+</div>
+
+<div class="stories" id="stories"></div>
+
+<div class="create">
+ <h3>📝 Create Post</h3>
+ <textarea id="newText" placeholder="आपके मन में क्या है?"></textarea>
+ <br><br>
+ <input type="file" id="newPhoto" accept="image/*">
+ <br>
+ <button class="publish" onclick="createPost()">Post करें</button>
+</div>
+
+<div id="feed"></div>
+
+<footer>
+ Fedbook © 2026<br>
+ Demo posts और demo accounts
+</footer>
+
 <nav>
- <button onclick="page('home')">Home</button>
- <button onclick="page('people')">People</button>
- <button onclick="page('search')">Search</button>
+ <button onclick="window.scrollTo(0,0)">🏠</button>
+ <button onclick="document.getElementById('search').focus()">🔍</button>
+ <button onclick="document.getElementById('newText').focus()">➕</button>
+ <button onclick="alert('यह Demo Profile है')">👤</button>
 </nav>
 
-<main>
-<section id="home">
- <div class="card">
-  <h2>Welcome to Fedbook</h2>
-  <p>Find people and follow your friends!</p>
- </div>
- <div id="homeUsers"></div>
-</section>
-
-<section id="people" class="hidden">
- <div class="card">
-  <h2>People</h2>
-  <div id="peopleList"></div>
- </div>
-</section>
-
-<section id="search" class="hidden">
- <div class="card">
-  <h2>Search People</h2>
-  <input id="searchBox" placeholder="Search name..." oninput="searchPeople()">
-  <div id="searchResults"></div>
- </div>
-</section>
-
-<section id="profile" class="hidden">
- <div class="card">
-  <div class="avatar" id="avatar">FB</div>
-  <h2 id="profileName"></h2>
-  <p class="muted" id="profileUsername"></p>
-  <div class="stats">
-   <button onclick="showList('followers')">
-    <strong id="followerCount">0</strong>Followers
-   </button>
-   <button onclick="showList('following')">
-    <strong id="followingCount">0</strong>Following
-   </button>
-  </div>
-  <button id="followButton" onclick="toggleFollow()">Follow</button>
-  <button onclick="page('people')">Back</button>
-  <p class="muted">Demo profile</p>
- </div>
- <div id="listArea"></div>
-</section>
-</main>
-
 <script>
-const currentUser="anurag";
-
-const users=[
- {id:"anurag",name:"Anurag",username:"@anurag"},
- {id:"rohit",name:"Rohit Sharma",username:"@rohit"},
- {id:"virat",name:"Virat Kohli",username:"@virat"},
- {id:"dhoni",name:"MS Dhoni",username:"@dhoni"},
- {id:"hardik",name:"Hardik Pandya",username:"@hardik"},
- {id:"rahul",name:"KL Rahul",username:"@rahul"}
+const demoNames = [
+ "Rahul Kumar","Aman Singh","Priya Sharma",
+ "Rohit Verma","Neha Kumari","Vikas Raj",
+ "Arjun Singh","Sneha Gupta","Aditya Kumar",
+ "Pooja Singh","Virat Fan Club","Cricket Lover"
 ];
 
-let relationships={};
-let currentProfile=currentUser;
+const demoTexts = [
+ "आज का दिन शानदार है ❤️",
+ "Cricket is my passion 🏏",
+ "Keep smiling 😊",
+ "Never give up 💪",
+ "Beautiful nature 🌳",
+ "Love my India 🇮🇳",
+ "Dream big 🔥",
+ "Travel memories 📸",
+ "Good morning ☀️",
+ "Life is beautiful ❤️",
+ "आज की यादगार तस्वीर ❤️",
+ "Enjoy every moment 😎",
+ "जय हिंद 🇮🇳",
+ "मंजिल उन्हीं को मिलती है जो मेहनत करते हैं 💯",
+ "Weekend vibes ✨"
+];
 
-try{
- relationships=JSON.parse(localStorage.getItem("fb_relationships")||"{}");
-}catch(e){relationships={};}
+let posts = [];
 
-function save(){
- localStorage.setItem("fb_relationships",JSON.stringify(relationships));
-}
-
-function setup(id){
- if(!relationships[id]){
-  relationships[id]={followers:[],following:[]};
+function loadPosts(){
+ try{
+  posts = JSON.parse(localStorage.getItem("fedbook_posts")) || [];
+ }catch(e){
+  posts = [];
  }
- return relationships[id];
-}
 
-users.forEach(u=>setup(u.id));
-
-function page(id){
- document.querySelectorAll("main section").forEach(s=>s.classList.add("hidden"));
- document.getElementById(id).classList.remove("hidden");
- if(id==="people")renderPeople();
- if(id==="home")renderHome();
-}
-
-function renderHome(){
- document.getElementById("homeUsers").innerHTML=
- users.filter(u=>u.id!==currentUser).map(u=>
- `<div class="card user">
- <div class="avatar">FB</div>
- <div><b>${u.name}</b><p class="muted">${u.username}</p>
- <button onclick="openProfile('${u.id}')">View Profile</button></div>
- </div>`).join("");
-}
-
-function renderPeople(){
- document.getElementById("peopleList").innerHTML=
- users.filter(u=>u.id!==currentUser).map(u=>
- `<div class="card user">
- <div class="avatar">FB</div>
- <div><b>${u.name}</b><p class="muted">${u.username}</p>
- <button onclick="openProfile('${u.id}')">View Profile</button></div>
- </div>`).join("");
-}
-
-function openProfile(id){
- const u=users.find(x=>x.id===id);
- if(!u)return;
- currentProfile=id;
- page("profile");
- document.getElementById("profileName").textContent=u.name;
- document.getElementById("profileUsername").textContent=u.username;
- document.getElementById("avatar").textContent=u.name[0].toUpperCase();
-
- let data=setup(id);
- document.getElementById("followerCount").textContent=
- id==="anurag"?"5M":data.followers.length;
- document.getElementById("followingCount").textContent=data.following.length;
-
- const btn=document.getElementById("followButton");
- if(id===currentUser){
-  btn.style.display="none";
- }else{
-  btn.style.display="inline-block";
-  btn.textContent=setup(id).followers.includes(currentUser)?"Following":"Follow";
- }
- document.getElementById("listArea").innerHTML="";
-}
-
-function toggleFollow(){
- if(currentProfile===currentUser)return;
- let me=setup(currentUser);
- let other=setup(currentProfile);
- if(me.following.includes(currentProfile)){
-  me.following=me.following.filter(x=>x!==currentProfile);
-  other.followers=other.followers.filter(x=>x!==currentUser);
- }else{
-  me.following.push(currentProfile);
-  if(!other.followers.includes(currentUser)){
-   other.followers.push(currentUser);
+ if(!posts.some(p=>p.isDemo)){
+  for(let i=0;i<100;i++){
+   posts.push({
+    id:"demo_"+i,
+    author:demoNames[i%demoNames.length],
+    text:demoTexts[i%demoTexts.length],
+    photo:"https://picsum.photos/seed/fedbook"+i+"/700/500",
+    avatar:"https://i.pravatar.cc/100?img="+((i%60)+1),
+    likes:(i*17)%5000,
+    liked:false,
+    comments:[],
+    isDemo:true
+   });
   }
+  savePosts();
  }
- save();
- openProfile(currentProfile);
 }
 
-function showList(type){
- let data=setup(currentProfile);
- let ids=data[type];
- let area=document.getElementById("listArea");
- area.innerHTML="<div class='card'><h3>"+(type==="followers"?"Followers":"Following")+"</h3></div>";
- let card=area.firstChild;
- if(ids.length===0){
-  card.innerHTML+="<p class='muted'>No users yet.</p>";
+function savePosts(){
+ try{
+  localStorage.setItem("fedbook_posts",JSON.stringify(posts));
+ }catch(e){
+  alert("Storage भर गया है। कुछ फोटो वाले पोस्ट हटाने पड़ सकते हैं।");
  }
- ids.forEach(id=>{
-  let u=users.find(x=>x.id===id);
-  if(!u)return;
-  let b=document.createElement("button");
-  b.textContent=u.name+" · "+u.username;
-  b.onclick=()=>openProfile(u.id);
-  card.appendChild(b);
+}
+
+function renderStories(){
+ let names=["Your Story","Rahul","Aman","Priya","Rohit","Neha"];
+ document.getElementById("stories").innerHTML=
+ names.map((n,i)=>`
+ <div class="story">
+ <img src="https://i.pravatar.cc/100?img=${i+1}">
+ <div>${n}</div>
+ </div>`).join("");
+}
+
+function renderPosts(){
+ let query=document.getElementById("search").value.toLowerCase();
+
+ let filtered=posts.filter(p=>
+ (p.text||"").toLowerCase().includes(query) ||
+ (p.author||"").toLowerCase().includes(query)
+ );
+
+ document.getElementById("feed").innerHTML=
+ filtered.map(p=>`
+ <div class="post">
+
+ <div class="post-head">
+ <img class="avatar" src="${escapeHTML(p.avatar||'https://i.pravatar.cc/100')}" >
+ <div>
+ <div class="author">${escapeHTML(p.author)}</div>
+ <div class="demo">${p.isDemo?'Demo Account':'Fedbook Member'}</div>
+ </div>
+ </div>
+
+ <div class="post-text">${escapeHTML(p.text)}</div>
+
+ ${p.photo?`<img class="post-photo" src="${escapeHTML(p.photo)}" loading="lazy" alt="Post photo">`:''}
+
+ <div class="stats">
+ <span>❤️ ${p.likes||0} Likes</span>
+ <span>${(p.comments||[]).length} Comments</span>
+ </div>
+
+ <div class="actions">
+ <button class="${p.liked?'liked':''}" onclick="likePost('${p.id}')">
+ ❤️ Like
+ </button>
+ <button onclick="focusComment('${p.id}')">💬 Comment</button>
+ <button onclick="sharePost('${p.id}')">↗ Share</button>
+ </div>
+
+ <div class="comment-area">
+ <input id="comment_${p.id}" placeholder="Comment लिखें...">
+ <button onclick="addComment('${p.id}')">Send</button>
+ </div>
+
+ <div class="comments">
+ ${(p.comments||[]).map(c=>`<p>💬 <b>${escapeHTML(c.name)}</b>: ${escapeHTML(c.text)}</p>`).join("")}
+ </div>
+
+ </div>
+ `).join("");
+}
+
+function escapeHTML(value){
+ return String(value).replace(/[&<>"']/g,function(c){
+  return {
+   "&":"&amp;",
+   "<":"&lt;",
+   ">":"&gt;",
+   '"':"&quot;",
+   "'":"&#39;"
+  }[c];
  });
 }
 
-function searchPeople(){
- let q=document.getElementById("searchBox").value.toLowerCase();
- let found=users.filter(u=>
- u.name.toLowerCase().includes(q)||
- u.username.toLowerCase().includes(q)
- );
- document.getElementById("searchResults").innerHTML=found.map(u=>
- `<div class="card">
- <b>${u.name}</b><p class="muted">${u.username}</p>
- <button onclick="openProfile('${u.id}')">View Profile</button>
- </div>`).join("");
+function likePost(id){
+ let p=posts.find(x=>x.id===id);
+ if(!p)return;
+
+ if(p.liked){
+  p.likes=Math.max(0,p.likes-1);
+  p.liked=false;
+ }else{
+  p.likes++;
+  p.liked=true;
+ }
+ savePosts();
+ renderPosts();
 }
 
-renderHome();
+function focusComment(id){
+ document.getElementById("comment_"+id).focus();
+}
+
+function addComment(id){
+ let p=posts.find(x=>x.id===id);
+ let input=document.getElementById("comment_"+id);
+
+ if(!p||!input.value.trim())return;
+
+ p.comments=p.comments||[];
+ p.comments.push({
+  name:"You",
+  text:input.value.trim()
+ });
+
+ savePosts();
+ renderPosts();
+}
+
+function sharePost(id){
+ let p=posts.find(x=>x.id===id);
+ if(!p)return;
+
+ let content=p.text+" - Fedbook";
+
+ if(navigator.share){
+  navigator.share({title:"Fedbook",text:content}).catch(()=>{});
+ }else if(navigator.clipboard){
+  navigator.clipboard.writeText(content)
+  .then(()=>alert("Post text copied!"));
+ }else{
+  alert(content);
+ }
+}
+
+function createPost(){
+ let text=document.getElementById("newText").value.trim();
+ let file=document.getElementById("newPhoto").files[0];
+
+ if(!text && !file){
+  alert("कुछ लिखें या फोटो चुनें!");
+  return;
+ }
+
+ let post={
+  id:"user_"+Date.now(),
+  author:"You",
+  text:text,
+  photo:"",
+  avatar:"https://i.pravatar.cc/100?img=12",
+  likes:0,
+  liked:false,
+  comments:[],
+  isDemo:false
+ };
+
+ function finish(){
+  posts.unshift(post);
+  savePosts();
+  document.getElementById("newText").value="";
+  document.getElementById("newPhoto").value="";
+  renderPosts();
+  window.scrollTo(0,0);
+ }
+
+ if(file){
+  if(!file.type.startsWith("image/")){
+   alert("सिर्फ फोटो चुनें");
+   return;
+  }
+  if(file.size>2*1024*1024){
+   alert("फोटो 2 MB से छोटी चुनें");
+   return;
+  }
+
+  let reader=new FileReader();
+  reader.onload=function(){
+   post.photo=reader.result;
+   finish();
+  };
+  reader.readAsDataURL(file);
+ }else{
+  finish();
+ }
+}
+
+loadPosts();
+renderStories();
+renderPosts();
 </script>
+
 </body>
 </html>
