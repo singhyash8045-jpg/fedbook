@@ -374,6 +374,100 @@ async function logout(){
   await startApp();
  }
 })();
-</script>
+</script><!-- FEDBOOK OFFICIAL PROFILE -->
+<style>
+.official-profile {
+  background: #111d31;
+  border: 1px solid #243653;
+  border-radius: 18px;
+  padding: 20px;
+  margin: 15px;
+  color: white;
+  font-family: Arial, sans-serif;
+}
+.official-top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.official-logo {
+  width: 65px;
+  height: 65px;
+  border-radius: 50%;
+  background: #080d18;
+  border: 2px solid #168cff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 27px;
+  font-weight: bold;
+  color: white;
+}
+.official-name {
+  font-size: 19px;
+  font-weight: bold;
+}
+.blue-tick {
+  display: inline-flex;
+  background: #168cff;
+  color: white;
+  border-radius: 50%;
+  width: 19px;
+  height: 19px;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+}
+.official-stats {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 22px;
+  text-align: center;
+}
+.official-stats strong {
+  display: block;
+  font-size: 19px;
+}
+.official-follow {
+  width: 100%;
+  margin-top: 18px;
+  padding: 12px;
+  background: #168cff;
+  color: white;
+  border: 0;
+  border-radius: 10px;
+  font-weight: bold;
+  font-size: 15px;
+}
+</style>
+
+<div class="official-profile">
+  <div class="official-top">
+    <div class="official-logo">FB</div>
+    <div>
+      <div class="official-name">
+        Fedbook Official
+        <span class="blue-tick">✓</span>
+      </div>
+      <div style="color:#91a8c5">@fedbook_official</div>
+      <div style="color:#91a8c5;margin-top:5px">
+        Official Fedbook Account
+      </div>
+    </div>
+  </div>
+
+  <p>Welcome to Fedbook! Connect, Share and Discover.</p>
+
+  <div class="official-stats">
+    <div><strong>0</strong>Posts</div>
+    <div><strong>0</strong>Followers</div>
+    <div><strong>0</strong>Following</div>
+  </div>
+
+  <button class="official-follow"
+    onclick="alert('Fedbook Official')">
+    Official Profile
+  </button>
+</div>
 </body>
 </html>
