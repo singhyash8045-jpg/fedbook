@@ -22,7 +22,6 @@ input,textarea{width:100%;padding:13px;margin:7px 0;background:#172233;color:whi
 .ring img{width:100%;height:100%;object-fit:cover;border-radius:50%;border:3px solid #101827}
 .storyuser p{font-size:12px}
 .media{width:100%;max-height:450px;object-fit:contain;margin-top:10px;border-radius:10px}
-#preview{width:100%;max-height:300px;object-fit:contain;margin-top:10px}
 #viewer{position:fixed;inset:0;background:#000;z-index:20;display:flex;align-items:center;justify-content:center}
 #viewer img,#viewer video{max-width:100%;max-height:85vh}
 #viewerName{position:absolute;top:20px;left:15px}
@@ -30,7 +29,6 @@ input,textarea{width:100%;padding:13px;margin:7px 0;background:#172233;color:whi
 </style>
 </head>
 <body>
-
 <header>
 <h2>UC · Universal Chat</h2>
 <button id="logoutBtn" class="hidden" onclick="logout()">Logout</button>
@@ -47,12 +45,11 @@ input,textarea{width:100%;padding:13px;margin:7px 0;background:#172233;color:whi
 </div>
 
 <div id="app" class="hidden">
-
 <div class="card">
 <h3>Stories</h3>
 <div class="storybar" id="storybar"></div>
 <button onclick="openPicker('story')">＋ Add Story</button>
-<input id="storyFile" type="file" accept="image/*,video/*" capture="environment" style="display:none">
+<input id="storyFile" type="file" accept="image/*,video/*" hidden>
 <div id="storyPreviewBox" class="hidden">
 <div id="storyPreview"></div>
 <button onclick="sendStory()">Upload Story</button>
@@ -64,11 +61,10 @@ input,textarea{width:100%;padding:13px;margin:7px 0;background:#172233;color:whi
 <h3>Create Post</h3>
 <textarea id="postText" placeholder="What's happening?"></textarea>
 <button onclick="openPicker('post')">Choose Photo / Video</button>
-<input id="postFile" type="file" accept="image/*,video/*" style="display:none">
+<input id="postFile" type="file" accept="image/*,video/*" hidden>
 <div id="postPreview" class="hidden"></div>
 <button onclick="createPost()">Publish Post</button>
 </div>
-
 <div id="feed"></div>
 </div>
 </div>
@@ -80,295 +76,234 @@ input,textarea{width:100%;padding:13px;margin:7px 0;background:#172233;color:whi
 </div>
 
 <script>
-const URL="https://pncaubpjfthccofynxya.supabase.co";
-const KEY="sb_publishable_X_Mv4fdvzlN437ZStGuxdA_0lBnvzX6";
-const db=supabase.createClient(URL,KEY);
+const SUPABASE_URL="https://pncaubpjfthccofynxya.supabase.co";
+const SUPABASE_KEY="sb_publishable_X_Mv4fdvzlN437ZStGuxdA_0lBnvzX6";
+const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 let me=null,selectedStory=null,selectedPost=null;
 let storyList=[],storyIndex=0,storyTimer=null;
 
-const $=id=>document.getElementById(id);
+const el=id=>document.getElementById(id);
 
 async function init(){
-const {data}=await db.auth.getSession();
+const {data,error}=await db.auth.getSession();
+if(error){alert(error.message);return}
 if(data.session){me=data.session.user;showApp()}
 }
-
 function showApp(){
-$("auth").classList.add("hidden");
-$("app").classList.remove("hidden");
-$("logoutBtn").classList.remove("hidden");
-loadPosts();
-loadStories();
+el("auth").classList.add("hidden");
+el("app").classList.remove("hidden");
+el("logoutBtn").classList.remove("hidden");
+loadPosts();loadStories();
 }
 
 async function signup(){
-let u=$("username").value.trim().toLowerCase();
-let p=$("password").value;
+let u=el("username").value.trim().toLowerCase();
+let p=el("password").value;
 if(!/^[a-z0-9_]{3,20}$/.test(u)){
-$("authmsg").innerText="Username 3-20 characters, letters/numbers only";
-return;
+el("authmsg").innerText="Username 3-20 characters, letters/numbers only";return;
 }
-if(p.length<6){$("authmsg").innerText="Password kam se kam 6 characters";return}
+if(p.length<6){el("authmsg").innerText="Password kam se kam 6 characters";return}
 let {data,error}=await db.auth.signUp({
-email:u+"@universalchat.app",
-password:p,
+email:u+"@universalchat.app",password:p,
 options:{data:{username:u}}
 });
-if(error){$("authmsg").innerText=error.message;return}
+if(error){el("authmsg").innerText=error.message;return}
 if(data.session){
-me=data.user;
-await saveProfile(u);
-showApp();
-}else{
-$("authmsg").innerText="Account ban gaya. Ab Login karo.";
+me=data.user;await saveProfile(u);showApp();
+}else el("authmsg").innerText="Account ban gaya. Ab Login karo.";
 }
-}
-
 async function login(){
-let u=$("username").value.trim().toLowerCase();
-let p=$("password").value;
+let u=el("username").value.trim().toLowerCase();
+let p=el("password").value;
 let {data,error}=await db.auth.signInWithPassword({
 email:u+"@universalchat.app",password:p
 });
-if(error){$("authmsg").innerText=error.message;return}
-me=data.user;
-await saveProfile(u);
-showApp();
+if(error){el("authmsg").innerText=error.message;return}
+me=data.user;await saveProfile(u);showApp();
 }
-
 async function saveProfile(u){
-let {error}=await db.from("profiles").upsert({
-id:me.id,username:u
-});
+let {error}=await db.from("profiles").upsert({id:me.id,username:u});
 if(error)console.log(error.message);
 }
+async function logout(){await db.auth.signOut();location.reload()}
 
-async function logout(){
-await db.auth.signOut();
-location.reload();
-}
-
-/* Gallery picker */
+/* Gallery */
 function openPicker(type){
-let el=type==="story"?$("storyFile"):$("postFile");
-el.value="";
-el.click();
+let fileInput=type==="story"?el("storyFile"):el("postFile");
+fileInput.value="";
+fileInput.click();
 }
-
-$("storyFile").addEventListener("change",function(){
+el("storyFile").addEventListener("change",function(){
 if(this.files&&this.files[0])previewStory(this.files[0]);
 });
-
-$("postFile").addEventListener("change",function(){
+el("postFile").addEventListener("change",function(){
 if(this.files&&this.files[0])previewPost(this.files[0]);
 });
 
-function makePreview(file,target){
+function previewFile(file,target){
 let url=URL.createObjectURL(file);
 target.innerHTML="";
-let el=document.createElement(file.type.startsWith("video/")?"video":"img");
-el.src=url;
-if(el.tagName==="VIDEO"){el.controls=true;el.playsInline=true}
-el.style.width="100%";
-el.style.maxHeight="300px";
-el.style.objectFit="contain";
-target.append(el);
+let media=document.createElement(file.type.startsWith("video/")?"video":"img");
+media.src=url;
+if(media.tagName==="VIDEO"){media.controls=true;media.playsInline=true}
+media.style.width="100%";
+media.style.maxHeight="300px";
+media.style.objectFit="contain";
+target.append(media);
 target.classList.remove("hidden");
 }
-
 function previewStory(file){
 selectedStory=file;
-makePreview(file,$("storyPreview"));
-$("storyPreviewBox").classList.remove("hidden");
+previewFile(file,el("storyPreview"));
+el("storyPreviewBox").classList.remove("hidden");
 }
-
 function previewPost(file){
 selectedPost=file;
-makePreview(file,$("postPreview"));
+previewFile(file,el("postPreview"));
 }
-
 function cancelStory(){
-selectedStory=null;
-$("storyFile").value="";
-$("storyPreview").innerHTML="";
-$("storyPreviewBox").classList.add("hidden");
+selectedStory=null;el("storyFile").value="";
+el("storyPreview").innerHTML="";
+el("storyPreviewBox").classList.add("hidden");
 }
 
-/* Upload */
+/* MIME type fix */
+function detectMime(file){
+if(file.type&&file.type!=="application/octet-stream")return file.type;
+let ext=(file.name.split(".").pop()||"").toLowerCase();
+const map={
+jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",
+webp:"image/webp",gif:"image/gif",heic:"image/heic",
+heif:"image/heif",avif:"image/avif",
+mp4:"video/mp4",mov:"video/quicktime",
+webm:"video/webm",m4v:"video/x-m4v",3gp:"video/3gpp"
+};
+return map[ext]||"application/octet-stream";
+}
 async function uploadMedia(file,folder){
 if(!file)throw new Error("File select nahi hui");
-let ext=(file.name.split(".").pop()||"jpg").replace(/[^a-zA-Z0-9]/g,"");
+let ext=(file.name.split(".").pop()||"jpg").toLowerCase().replace(/[^a-z0-9]/g,"");
+let mime=detectMime(file);
 let path=me.id+"/"+folder+"/"+Date.now()+"_"+Math.random().toString(36).slice(2)+"."+ext;
-
 let {error}=await db.storage.from("post-images").upload(path,file,{
-upsert:false,contentType:file.type||"application/octet-stream"
+upsert:false,contentType:mime
 });
 if(error)throw error;
 return path;
 }
-
 async function signedUrl(path){
 let {data,error}=await db.storage.from("post-images").createSignedUrl(path,3600);
 if(error)throw error;
 return data.signedUrl;
 }
 
-/* Story */
+/* Story upload */
 async function sendStory(){
 if(!selectedStory)return alert("Pehle photo ya video chuno");
 try{
 if(selectedStory.size>50*1024*1024)throw new Error("File 50 MB se chhoti honi chahiye");
 let path=await uploadMedia(selectedStory,"stories");
-let type=selectedStory.type.startsWith("video/")?"video":"image";
-
+let type=detectMime(selectedStory).startsWith("video/")?"video":"image";
 let {error}=await db.from("stories").insert({
-user_id:me.id,
-media_url:path,
-media_type:type,
+user_id:me.id,media_url:path,media_type:type,
 expires_at:new Date(Date.now()+86400000).toISOString()
 });
 if(error)throw error;
-
-cancelStory();
-alert("Story upload ho gayi!");
-loadStories();
+cancelStory();alert("Story upload ho gayi!");loadStories();
 }catch(e){alert("Story upload error: "+e.message)}
 }
 
+/* Story list */
 async function loadStories(){
-let {data,error}=await db.from("stories")
-.select("*")
+let {data,error}=await db.from("stories").select("*")
 .gt("expires_at",new Date().toISOString())
 .order("created_at",{ascending:true});
-
-if(error){$("storybar").innerText="Story error: "+error.message;return}
-$("storybar").innerHTML="";
-
+if(error){el("storybar").innerText="Story error: "+error.message;return}
+el("storybar").innerHTML="";
 let groups={};
 for(let s of data||[]){
 if(!groups[s.user_id])groups[s.user_id]=[];
 groups[s.user_id].push(s);
 }
-
 for(let uid of Object.keys(groups)){
 let {data:profile}=await db.from("profiles").select("username").eq("id",uid).maybeSingle();
-let group=groups[uid];
-let path=group[group.length-1].media_url;
-let url="";
-try{url=await signedUrl(path)}catch(e){continue}
-
-let item=document.createElement("div");
-item.className="storyuser";
-let ring=document.createElement("div");
-ring.className="ring";
-let img=document.createElement("img");
-img.src=url;
-ring.append(img);
-
+let group=groups[uid],url;
+try{url=await signedUrl(group[group.length-1].media_url)}catch(e){continue}
+let item=document.createElement("div");item.className="storyuser";
+let ring=document.createElement("div");ring.className="ring";
+let img=document.createElement("img");img.src=url;ring.append(img);
 let label=document.createElement("p");
 label.innerText=uid===me.id?"Your Story":profile?.username||"User";
 item.append(ring,label);
 item.onclick=()=>viewStories(group,label.innerText);
-$("storybar").append(item);
+el("storybar").append(item);
 }
 }
-
 async function viewStories(list,name){
-storyList=list;
-storyIndex=0;
-showStory(name);
+storyList=list;storyIndex=0;showStory(name);
 }
-
 async function showStory(name){
 clearTimeout(storyTimer);
 if(storyIndex>=storyList.length){closeViewer();return}
 let s=storyList[storyIndex];
-$("viewerName").innerText=name;
-$("viewerMedia").innerHTML="";
-$("viewer").classList.remove("hidden");
-
+el("viewerName").innerText=name;
+el("viewerMedia").innerHTML="";
+el("viewer").classList.remove("hidden");
 try{
 let url=await signedUrl(s.media_url);
-let el=document.createElement(s.media_type==="video"?"video":"img");
-el.src=url;
-if(el.tagName==="VIDEO"){
-el.controls=true;el.autoplay=true;el.playsInline=true;
-}
-$("viewerMedia").append(el);
+let media=document.createElement(s.media_type==="video"?"video":"img");
+media.src=url;
+if(media.tagName==="VIDEO"){media.controls=true;media.autoplay=true;media.playsInline=true}
+el("viewerMedia").append(media);
 storyTimer=setTimeout(()=>{storyIndex++;showStory(name)},s.media_type==="video"?15000:5000);
 }catch(e){alert("Story open error: "+e.message);closeViewer()}
 }
-
 function closeViewer(){
 clearTimeout(storyTimer);
-$("viewer").classList.add("hidden");
-$("viewerMedia").innerHTML="";
+el("viewer").classList.add("hidden");
+el("viewerMedia").innerHTML="";
 }
 
 /* Posts */
 async function createPost(){
 try{
-let text=$("postText").value.trim();
-let file=selectedPost;
+let text=el("postText").value.trim(),file=selectedPost;
 if(!text&&!file)return alert("Post likho ya photo chuno");
-
-let path=null;
-if(file)path=await uploadMedia(file,"posts");
-
+let path=null;if(file)path=await uploadMedia(file,"posts");
 let {error}=await db.from("posts").insert({
-user_id:me.id,
-content:text,
-image_url:path
+user_id:me.id,content:text,image_url:path
 });
 if(error)throw error;
-
-$("postText").value="";
-$("postFile").value="";
-$("postPreview").innerHTML="";
-$("postPreview").classList.add("hidden");
-selectedPost=null;
+el("postText").value="";el("postFile").value="";
+el("postPreview").innerHTML="";
+el("postPreview").classList.add("hidden");selectedPost=null;
 loadPosts();
 }catch(e){alert("Post error: "+e.message)}
 }
-
 async function loadPosts(){
 let {data,error}=await db.from("posts").select("*").order("created_at",{ascending:false});
-if(error){$("feed").innerText=error.message;return}
-$("feed").innerHTML="";
-
+if(error){el("feed").innerText=error.message;return}
+el("feed").innerHTML="";
 for(let p of data||[]){
 let {data:profile}=await db.from("profiles").select("username").eq("id",p.user_id).maybeSingle();
-let card=document.createElement("div");
-card.className="card";
-
-let title=document.createElement("b");
-title.innerText=profile?.username||"User";
-let text=document.createElement("p");
-text.innerText=p.content||"";
+let card=document.createElement("div");card.className="card";
+let title=document.createElement("b");title.innerText=profile?.username||"User";
+let text=document.createElement("p");text.innerText=p.content||"";
 card.append(title,text);
-
 if(p.image_url){
 try{
 let url=await signedUrl(p.image_url);
-let media=document.createElement("img");
-media.src=url;
-media.className="media";
-card.append(media);
+let img=document.createElement("img");img.src=url;img.className="media";card.append(img);
 }catch(e){}
 }
-
 if(p.user_id===me.id){
-let del=document.createElement("button");
-del.innerText="Delete Post";
-del.style.background="#b91c1c";
-del.onclick=()=>deletePost(p);
-card.append(del);
+let del=document.createElement("button");del.innerText="Delete Post";
+del.style.background="#b91c1c";del.onclick=()=>deletePost(p);card.append(del);
 }
-$("feed").append(card);
+el("feed").append(card);
 }
 }
-
 async function deletePost(p){
 if(!confirm("Post delete karna hai?"))return;
 let {error}=await db.from("posts").delete().eq("id",p.id).eq("user_id",me.id);
@@ -376,7 +311,6 @@ if(error){alert(error.message);return}
 if(p.image_url)await db.storage.from("post-images").remove([p.image_url]);
 loadPosts();
 }
-
 init();
 </script>
 </body>
