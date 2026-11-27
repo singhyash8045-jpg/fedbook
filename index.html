@@ -1,263 +1,135 @@
+
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Fedbook</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Universal Chat</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#080d18;color:#eef4fc;font-family:Arial,sans-serif}
-header{background:#111d31;padding:13px 15px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:5;border-bottom:1px solid #243653}
-h1{color:#168cff;margin:0;font-size:25px}
-main{max-width:650px;margin:auto;padding:10px}
-.card{background:#111d31;border:1px solid #243653;border-radius:13px;padding:15px;margin:12px 0}
-input,button,select,textarea{width:100%;padding:12px;margin:6px 0;border-radius:8px;border:1px solid #344967;background:#080d18;color:white}
-textarea{resize:vertical;min-height:65px}
-button{background:#168cff;border:0;font-weight:bold;cursor:pointer}
-button.secondary{background:#26364d}
-button:disabled{opacity:.5}
+body{margin:0;background:#080b12;color:#fff;font-family:Arial,sans-serif}
+header{height:60px;background:#111827;border-bottom:1px solid #263247;display:flex;align-items:center;justify-content:space-between;padding:0 16px;position:sticky;top:0}
+.logo{font-size:23px;font-weight:bold;color:#3998ff}
+main{max-width:600px;margin:auto;padding:15px}
+.card{background:#111827;border:1px solid #29364a;border-radius:14px;padding:18px;margin:15px 0}
+input,textarea,button{width:100%;padding:13px;margin:7px 0;border-radius:9px;border:1px solid #34445c;background:#080b12;color:white}
+button{background:#1877f2;border:0;font-weight:bold;cursor:pointer}
+.secondary{background:#29364a}
 .hidden{display:none!important}
-.muted{color:#91a8c5;font-size:13px}
-.story-bar{display:flex;gap:14px;overflow-x:auto;padding:12px 4px}
-.story-circle{flex:0 0 75px;width:75px;text-align:center;cursor:pointer}
-.story-ring{width:68px;height:68px;border-radius:50%;padding:3px;margin:auto;background:linear-gradient(45deg,#ffb000,#ff0069,#9b00ff)}
-.story-ring.seen{background:#596579}
-.story-avatar{width:100%;height:100%;border:3px solid #111d31;border-radius:50%;background:#26364d;display:flex;align-items:center;justify-content:center;font-size:23px;font-weight:bold;overflow:hidden}
-.story-label{font-size:11px;display:block;margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.post{background:#111d31;border:1px solid #243653;border-radius:13px;margin:14px 0;overflow:hidden}
-.post-head{padding:13px;display:flex;justify-content:space-between;align-items:center;gap:10px}
-.post-image{width:100%;max-height:520px;object-fit:contain;background:#05080e;display:block}
-.post-caption{padding:12px 14px;white-space:pre-wrap;overflow-wrap:anywhere}
-.post-actions{display:flex;gap:8px;padding:0 12px 10px}
-.post-actions button{flex:1}
-.like-button.liked{background:#a92754}
-.comment-area{padding:10px 13px;border-top:1px solid #26364d}
-.comment{padding:8px 0;border-bottom:1px solid #26364d;font-size:14px;overflow-wrap:anywhere}
-.comment-form{display:flex;gap:6px}
-.comment-form input{flex:1;min-width:0}
-.comment-form button{width:85px}
-.track{border-top:1px solid #344967;padding:12px 0}
-audio{width:100%;margin:8px 0}
-.story-viewer{position:fixed;inset:0;background:#000;z-index:20;display:flex;align-items:center;justify-content:center}
-.viewer-top{position:absolute;top:0;left:0;right:0;padding:15px;z-index:3;background:linear-gradient(#0009,transparent)}
-.viewer-progress{display:flex;gap:4px;margin-bottom:13px}
-.progress-part{height:3px;background:#777;border-radius:5px;flex:1}
-.progress-part.active{background:white}
-.viewer-user{display:flex;justify-content:space-between;align-items:center}
-.viewer-close{width:auto;background:#26364d}
-.viewer-content{width:100%;height:100%;display:flex;align-items:center;justify-content:center}
-.viewer-content img,.viewer-content video{max-width:100%;max-height:100%;object-fit:contain}
-.viewer-caption{position:absolute;bottom:25px;left:15px;right:15px;text-align:center;background:#0007;padding:12px}
-.viewer-nav{position:absolute;top:60px;bottom:60px;width:35%;z-index:2}
-.viewer-nav.left{left:0}
-.viewer-nav.right{right:0}
+.muted{color:#9aa9bd;font-size:13px}
+.post{background:#111827;border:1px solid #29364a;border-radius:13px;margin:15px 0;overflow:hidden}
+.post img{width:100%;max-height:500px;object-fit:contain;background:#000}
+.post-content{padding:14px}
+.actions{display:flex;gap:8px}
+.actions button{flex:1}
+h2{margin-top:0}
 </style>
 </head>
-
 <body>
-
 <header>
-<h1>FB Fedbook</h1>
+<div class="logo">UC Universal Chat</div>
 <button id="logout" class="secondary hidden" style="width:auto">Logout</button>
 </header>
 
 <main>
-
 <section id="auth">
 <div class="card">
-<h2>Welcome to Fedbook</h2>
-
+<h2>Welcome to Universal Chat</h2>
+<p class="muted">Connect with everyone.</p>
 <h3>Create Account</h3>
-<input id="newUser" placeholder="Username (3-20 characters)">
-<input id="newPass" type="password" placeholder="Password (minimum 6 characters)">
-<button id="register">Create Account</button>
-
+<input id="newUsername" placeholder="Username">
+<input id="newPassword" type="password" placeholder="Password (6+ characters)">
+<button id="signup">Create Account</button>
 <hr>
-
 <h3>Login</h3>
-<input id="loginUser" placeholder="Username">
-<input id="loginPass" type="password" placeholder="Password">
+<input id="username" placeholder="Username">
+<input id="password" type="password" placeholder="Password">
 <button id="login">Login</button>
 <p id="authMessage" class="muted"></p>
 </div>
 </section>
 
 <section id="app" class="hidden">
-
 <div class="card">
-<h2>Stories</h2>
-<div id="storyBar" class="story-bar"></div>
-<button id="refreshStories" class="secondary">Refresh Stories</button>
+<h2 id="welcome">Home</h2>
+<p class="muted">Welcome to your Universal Chat community.</p>
 </div>
 
 <div class="card">
-<h2>📝 Create Post</h2>
-<textarea id="postCaption" placeholder="What's on your mind?"></textarea>
-<input id="postFile" type="file" accept="image/*">
-<button id="publishPost">Publish Post</button>
+<h2>Create Post</h2>
+<textarea id="caption" placeholder="What's happening?"></textarea>
+<input id="photo" type="file" accept="image/*">
+<button id="publish">Publish Post</button>
 <p id="postMessage" class="muted"></p>
 </div>
 
 <div class="card">
-<h2>🏠 All Posts</h2>
-<button id="refreshPosts" class="secondary">Refresh Posts</button>
-<div id="postsFeed"></div>
+<h2>Home Feed</h2>
+<button id="refresh" class="secondary">Refresh Posts</button>
+<div id="feed"></div>
 </div>
 
 <div class="card">
 <h2>My Profile</h2>
-<p id="profileName"></p>
-<p class="muted">Fedbook Member</p>
+<p id="profile"></p>
+<p class="muted">Universal Chat Member</p>
 </div>
-
-<div class="card">
-<h2>🎵 My Music Library</h2>
-<p class="muted">Sirf apne ya permission wale audio upload karo.</p>
-<input id="musicFile" type="file" accept="audio/*">
-<button id="uploadMusic">Add Music to Library</button>
-<p id="musicMessage" class="muted"></p>
-<div id="savedMusic"></div>
-</div>
-
-<div class="card">
-<h2>📸 Create Story</h2>
-<input id="storyFile" type="file" accept="image/*,video/*">
-<input id="storyCaption" placeholder="Write a caption">
-<label>Select Music</label>
-<select id="musicSelect">
-<option value="">No Music</option>
-</select>
-<button id="postStory">Upload Story</button>
-<p id="storyMessage" class="muted"></p>
-</div>
-
-<div class="card">
-<h2>🌟 All Stories</h2>
-<div id="stories"></div>
-</div>
-
 </section>
 </main>
 
-<div id="storyViewer" class="story-viewer hidden">
-<div class="viewer-top">
-<div id="viewerProgress" class="viewer-progress"></div>
-<div class="viewer-user">
-<div>
-<b id="viewerUsername"></b>
-<div id="viewerSong" class="muted"></div>
-</div>
-<button id="closeViewer" class="viewer-close">✕</button>
-</div>
-</div>
-<div id="previousStory" class="viewer-nav left"></div>
-<div id="nextStory" class="viewer-nav right"></div>
-<div id="viewerContent" class="viewer-content"></div>
-<div id="viewerCaption" class="viewer-caption"></div>
-</div>
-
 <script>
-const SUPABASE_URL="https://eyvwfkavwppghmbjimgk.supabase.co";
-const SUPABASE_KEY="sb_publishable_MC_4M9VxUmd5mZ1-r4Rs4g_eVZ8GxCG";
-const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-
-const CLOUD_NAME="g1vmdztf";
-const UPLOAD_PRESET="Fedbook_upload";
+const SUPABASE_URL="https://pncaubpjfthccofynxya.supabase.co";
+const SUPABASE_KEY="sb_publishable_X_Mv4fdvzlN437ZStGuxdA_0lBnvzX6";
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 let currentUser=null;
-let currentUsername="Fedbook User";
-let musicList=[];
-let allStories=[];
-let storyGroups=[];
-let seenStories=new Set();
-let activeGroup=0;
-let activeStory=0;
+let currentUsername="";
 
 const $=id=>document.getElementById(id);
-
-function msg(id,text){
-$(id).textContent=text;
-}
-
-function makeElement(tag,text,className){
-const el=document.createElement(tag);
-if(text!==undefined)el.textContent=text;
-if(className)el.className=className;
-return el;
-}
-
-async function uploadCloudinary(file){
-const form=new FormData();
-form.append("file",file);
-form.append("upload_preset",UPLOAD_PRESET);
-
-const resourceType=file.type.startsWith("image/")?"image":
-file.type.startsWith("audio/")?"video":"video";
-
-const response=await fetch(
-`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`,
-{method:"POST",body:form}
-);
-
-const result=await response.json();
-if(!response.ok)throw new Error(result.error?.message||"Upload failed");
-return result.secure_url;
-}
-
-// ACCOUNT SYSTEM — OLD USERNAME/PASSWORD LOGIN
-async function saveProfile(user,username){
-const {error}=await supabaseClient.from("profiles").upsert({
-id:user.id,
-username:username
-},{onConflict:"id"});
-
-if(error)throw error;
-}
-
-async function getUsername(user){
-const {data,error}=await supabaseClient.from("profiles")
-.select("username").eq("id",user.id).maybeSingle();
-
-if(error)throw error;
-return data?.username||user.user_metadata?.username||"Fedbook User";
-}
+function message(id,text){$(id).textContent=text;}
 
 function showApp(user,username){
 currentUser=user;
 currentUsername=username;
-
 $("auth").classList.add("hidden");
 $("app").classList.remove("hidden");
 $("logout").classList.remove("hidden");
-$("profileName").textContent="Username: "+username;
-
-loadMusic();
-loadStories();
+$("welcome").textContent="Welcome, "+username;
+$("profile").textContent="@"+username;
 loadPosts();
 }
 
-// CREATE ACCOUNT
-$("register").onclick=async()=>{
-const username=$("newUser").value.trim().toLowerCase();
-const password=$("newPass").value;
+async function saveProfile(user,username){
+const {error}=await db.from("profiles").upsert({
+id:user.id,
+username:username
+},{onConflict:"id"});
+if(error)throw error;
+}
 
-if(!/^[a-z0-9_]{3,20}$/.test(username))
-return msg("authMessage","Username 3-20 characters ka hona chahiye.");
+$("signup").onclick=async()=>{
+const username=$("newUsername").value.trim().toLowerCase();
+const password=$("newPassword").value;
 
-if(password.length<6)
-return msg("authMessage","Password minimum 6 characters ka rakho.");
+if(!/^[a-z0-9_]{3,20}$/.test(username)){
+message("authMessage","Username 3-20 characters ka hona chahiye.");
+return;
+}
+if(password.length<6){
+message("authMessage","Password kam se kam 6 characters ka rakho.");
+return;
+}
 
-msg("authMessage","Account ban raha hai...");
+message("authMessage","Account creating...");
+$("signup").disabled=true;
 
 try{
-const {data,error}=await supabaseClient.auth.signUp({
-email:username+"@fedbook.app",
-password,
-options:{data:{username}}
+const {data,error}=await db.auth.signUp({
+email:username+"@universalchat.app",
+password:password,
+options:{data:{username:username}}
 });
-
 if(error)throw error;
 if(!data.user)throw new Error("Account create nahi hua.");
 
@@ -265,506 +137,148 @@ if(data.session){
 await saveProfile(data.user,username);
 showApp(data.user,username);
 }else{
-msg("authMessage","Account bana. Ab login karo.");
+message("authMessage","Account ban gaya. Email confirmation ke baad login karo.");
 }
 }catch(e){
-msg("authMessage",e.message);
+message("authMessage",e.message);
+}finally{
+$("signup").disabled=false;
 }
 };
 
-// LOGIN — SAME OLD METHOD
 $("login").onclick=async()=>{
-const username=$("loginUser").value.trim().toLowerCase();
-const password=$("loginPass").value;
+const username=$("username").value.trim().toLowerCase();
+const password=$("password").value;
 
-if(!/^[a-z0-9_]{3,20}$/.test(username))
-return msg("authMessage","Sahi username likho.");
+if(!username||!password){
+message("authMessage","Username aur password likho.");
+return;
+}
 
-if(!password)
-return msg("authMessage","Password likho.");
-
-msg("authMessage","Login ho raha hai...");
+message("authMessage","Logging in...");
 $("login").disabled=true;
 
 try{
-const {data,error}=await supabaseClient.auth.signInWithPassword({
-email:username+"@fedbook.app",
+const {data,error}=await db.auth.signInWithPassword({
+email:username+"@universalchat.app",
 password:password
 });
-
 if(error)throw error;
 
 await saveProfile(data.user,username);
 showApp(data.user,username);
-
 }catch(e){
-msg("authMessage","Login Error: "+e.message);
+message("authMessage","Login Error: "+e.message);
 }finally{
 $("login").disabled=false;
 }
 };
 
 $("logout").onclick=async()=>{
-await supabaseClient.auth.signOut();
+await db.auth.signOut();
 location.reload();
 };
 
-// MUSIC LIBRARY
-$("uploadMusic").onclick=async()=>{
-const file=$("musicFile").files[0];
+$("publish").onclick=async()=>{
+const caption=$("caption").value.trim();
+const file=$("photo").files[0];
 
-if(!file)return msg("musicMessage","Audio file select karo.");
-if(!file.type.startsWith("audio/"))
-return msg("musicMessage","Sirf audio file select karo.");
-
-msg("musicMessage","Music upload ho raha hai...");
-
-try{
-const musicUrl=await uploadCloudinary(file);
-const title=file.name.replace(/\.[^/.]+$/,"");
-
-const {error}=await supabaseClient.from("saved_music").insert({
-user_id:currentUser.id,
-track_id:"upload_"+Date.now(),
-title:title,
-artist:"Your Music",
-preview_url:musicUrl,
-license_url:"",
-provider:"User Upload"
-});
-
-if(error)throw error;
-
-$("musicFile").value="";
-msg("musicMessage","Music Library mein save ho gaya!");
-loadMusic();
-
-}catch(e){
-msg("musicMessage",e.message);
+if(!caption&&!file){
+message("postMessage","Caption ya photo add karo.");
+return;
 }
-};
-
-async function loadMusic(){
-if(!currentUser)return;
-
-const {data,error}=await supabaseClient.from("saved_music")
-.select("*").eq("user_id",currentUser.id)
-.order("created_at",{ascending:false});
-
-if(error)return msg("savedMusic",error.message);
-
-musicList=data||[];
-$("savedMusic").innerHTML="";
-$("musicSelect").innerHTML='<option value="">No Music</option>';
-
-musicList.forEach((track,index)=>{
-const option=makeElement("option",track.title);
-option.value=String(index);
-$("musicSelect").appendChild(option);
-
-const div=makeElement("div",undefined,"track");
-div.appendChild(makeElement("b",track.title));
-
-const audio=document.createElement("audio");
-audio.controls=true;
-audio.src=track.preview_url;
-
-const remove=makeElement("button","Delete Music","secondary");
-
-remove.onclick=async()=>{
-if(!confirm("Delete this music?"))return;
-
-const {error}=await supabaseClient.from("saved_music")
-.delete().eq("id",track.id).eq("user_id",currentUser.id);
-
-if(error)return alert(error.message);
-loadMusic();
-};
-
-div.append(audio,remove);
-$("savedMusic").appendChild(div);
-});
-
-if(!musicList.length)msg("savedMusic","Abhi Music Library khali hai.");
-}
-
-// CREATE STORY
-$("postStory").onclick=async()=>{
-const file=$("storyFile").files[0];
-
-if(!file)return msg("storyMessage","Photo ya video select karo.");
-
-if(!file.type.startsWith("image/")&&!file.type.startsWith("video/"))
-return msg("storyMessage","Photo ya video file select karo.");
-
-msg("storyMessage","Story upload ho rahi hai...");
-
-try{
-const mediaUrl=await uploadCloudinary(file);
-const selectedIndex=$("musicSelect").value;
-const song=selectedIndex===""?null:musicList[Number(selectedIndex)];
-
-const {error}=await supabaseClient.from("stories").insert({
-user_id:currentUser.id,
-media_url:mediaUrl,
-media_type:file.type.startsWith("video/")?"video":"image",
-caption:$("storyCaption").value.trim(),
-music_title:song?.title||null,
-music_artist:song?.artist||null,
-music_url:song?.preview_url||null,
-music_source:song?.provider||null
-});
-
-if(error)throw error;
-
-msg("storyMessage","Story successfully uploaded!");
-$("storyFile").value="";
-$("storyCaption").value="";
-$("musicSelect").value="";
-loadStories();
-
-}catch(e){
-msg("storyMessage",e.message);
-}
-};
-
-// LOAD STORIES
-async function loadStories(){
-if(!currentUser)return;
-
-const {data,error}=await supabaseClient.from("stories")
-.select("*").gt("expires_at",new Date().toISOString())
-.order("created_at",{ascending:true});
-
-if(error){
-msg("stories",error.message);
-return msg("storyBar",error.message);
-}
-
-allStories=data||[];
-const ids=[...new Set(allStories.map(s=>s.user_id))];
-let names={};
-
-if(ids.length){
-const result=await supabaseClient.from("profiles")
-.select("id,username").in("id",ids);
-
-if(!result.error){
-(result.data||[]).forEach(p=>names[p.id]=p.username);
-}
-}
-
-allStories.forEach(s=>{
-s.displayName=s.user_id===currentUser.id?
-currentUsername:(names[s.user_id]||"Fedbook Member");
-});
-
-const map=new Map();
-storyGroups=[];
-
-allStories.forEach(s=>{
-if(!map.has(s.user_id)){
-const group={
-userId:s.user_id,
-username:s.displayName,
-stories:[]
-};
-map.set(s.user_id,group);
-storyGroups.push(group);
-}
-map.get(s.user_id).stories.push(s);
-});
-
-renderStoryBar();
-renderStoryList();
-}
-
-function renderStoryBar(){
-const bar=$("storyBar");
-bar.innerHTML="";
-
-const circle=makeElement("div",undefined,"story-circle");
-const ring=makeElement("div",undefined,"story-ring");
-const avatar=makeElement("div","+","story-avatar");
-
-ring.appendChild(avatar);
-circle.append(ring,makeElement("span","Your Story","story-label"));
-circle.onclick=()=>{$("storyFile").click();};
-bar.appendChild(circle);
-
-storyGroups.forEach(group=>{
-if(group.userId===currentUser.id)return;
-
-const item=makeElement("div",undefined,"story-circle");
-const r=makeElement("div",undefined,"story-ring");
-
-if(seenStories.has(group.userId))r.classList.add("seen");
-
-const av=makeElement("div",group.username.charAt(0).toUpperCase(),"story-avatar");
-r.appendChild(av);
-
-item.append(r,makeElement("span",group.username,"story-label"));
-item.onclick=()=>openStory(group.userId,0);
-bar.appendChild(item);
-});
-}
-
-function renderStoryList(){
-const box=$("stories");
-box.innerHTML="";
-
-if(!allStories.length){
-box.textContent="Abhi koi active story nahi hai.";
+if(file){
+message("postMessage","Photo upload ke liye Cloudinary setup abhi baaki hai.");
 return;
 }
 
-storyGroups.forEach(group=>{
-box.appendChild(makeElement("h3",group.username));
-
-group.stories.forEach(story=>{
-const div=makeElement("div",undefined,"story");
-div.appendChild(makeElement("p",story.caption||""));
-
-const media=document.createElement(
-story.media_type==="video"?"video":"img"
-);
-media.src=story.media_url;
-
-if(story.media_type==="video"){
-media.controls=true;
-media.style.width="100%";
-}else{
-media.alt="Story";
-media.style.width="100%";
-}
-
-div.appendChild(media);
-
-if(story.music_url){
-const audio=document.createElement("audio");
-audio.controls=true;
-audio.src=story.music_url;
-
-div.append(
-makeElement("p","🎵 "+(story.music_title||"Story Music")),
-audio
-);
-}
-
-box.appendChild(div);
-});
-});
-}
-
-function openStory(userId,index){
-activeGroup=storyGroups.findIndex(g=>g.userId===userId);
-activeStory=index;
-
-showCurrentStory();
-$("storyViewer").classList.remove("hidden");
-}
-
-function showCurrentStory(){
-const group=storyGroups[activeGroup];
-if(!group)return closeStory();
-
-const story=group.stories[activeStory];
-if(!story)return closeStory();
-
-seenStories.add(group.userId);
-renderStoryBar();
-
-$("viewerUsername").textContent=group.username;
-$("viewerCaption").textContent=story.caption||"";
-$("viewerSong").textContent=story.music_title?
-"🎵 "+story.music_title:"";
-
-$("viewerProgress").innerHTML="";
-
-group.stories.forEach((s,i)=>{
-const p=makeElement("div",undefined,"progress-part");
-if(i<=activeStory)p.classList.add("active");
-$("viewerProgress").appendChild(p);
-});
-
-$("viewerContent").innerHTML="";
-
-const media=document.createElement(
-story.media_type==="video"?"video":"img"
-);
-media.src=story.media_url;
-
-if(story.media_type==="video"){
-media.controls=true;
-}else{
-media.alt="Story";
-}
-
-$("viewerContent").appendChild(media);
-}
-
-function closeStory(){
-$("storyViewer").classList.add("hidden");
-$("viewerContent").innerHTML="";
-}
-
-function moveStory(direction){
-const group=storyGroups[activeGroup];
-if(!group)return;
-
-activeStory+=direction;
-
-if(activeStory>=group.stories.length){
-activeGroup++;
-activeStory=0;
-}
-
-if(activeStory<0){
-activeGroup--;
-if(activeGroup>=0){
-activeStory=storyGroups[activeGroup].stories.length-1;
-}
-}
-
-if(activeGroup<0||activeGroup>=storyGroups.length){
-return closeStory();
-}
-
-showCurrentStory();
-}
-
-$("closeViewer").onclick=closeStory;
-$("nextStory").onclick=()=>moveStory(1);
-$("previousStory").onclick=()=>moveStory(-1);
-$("refreshStories").onclick=loadStories;
-
-// CREATE POST
-$("publishPost").onclick=async()=>{
-const caption=$("postCaption").value.trim();
-const file=$("postFile").files[0];
-
-if(!caption&&!file)
-return msg("postMessage","Caption ya photo add karo.");
-
-if(file&&!file.type.startsWith("image/"))
-return msg("postMessage","Post ke liye photo select karo.");
-
-msg("postMessage","Post publish ho rahi hai...");
-
 try{
-let imageUrl=null;
-
-if(file){
-imageUrl=await uploadCloudinary(file);
-}
-
-const {error}=await supabaseClient.from("posts").insert({
+const {error}=await db.from("posts").insert({
 user_id:currentUser.id,
 caption:caption,
-image_url:imageUrl
+image_url:null
 });
-
 if(error)throw error;
-
-$("postCaption").value="";
-$("postFile").value="";
-msg("postMessage","Post publish ho gayi!");
-
+$("caption").value="";
+message("postMessage","Post published!");
 loadPosts();
-
 }catch(e){
-msg("postMessage",e.message);
+message("postMessage",e.message);
 }
 };
 
-// LOAD POSTS, LIKES AND COMMENTS
 async function loadPosts(){
 if(!currentUser)return;
+const feed=$("feed");
+feed.textContent="Loading posts...";
 
-const feed=$("postsFeed");
-feed.textContent="Posts load ho rahi hain...";
-
-const {data:posts,error}=await supabaseClient.from("posts")
+const {data:posts,error}=await db.from("posts")
 .select("*").order("created_at",{ascending:false});
 
 if(error){
 feed.textContent=error.message;
 return;
 }
-
 feed.innerHTML="";
 
-if(!posts||!posts.length){
-feed.textContent="Abhi koi post nahi hai. Pehli post tum karo!";
+if(!posts.length){
+feed.textContent="No posts yet. Be the first to post!";
 return;
 }
 
 const ids=[...new Set(posts.map(p=>p.user_id))];
-const postIds=posts.map(p=>p.id);
-
-const [profileResult,likeResult,commentResult]=await Promise.all([
-supabaseClient.from("profiles").select("id,username").in("id",ids),
-supabaseClient.from("likes").select("post_id,user_id").in("post_id",postIds),
-supabaseClient.from("comments").select("*").in("post_id",postIds)
-.order("created_at",{ascending:true})
-]);
-
-if(profileResult.error){
-feed.textContent=profileResult.error.message;
-return;
-}
-if(likeResult.error){
-feed.textContent=likeResult.error.message;
-return;
-}
-if(commentResult.error){
-feed.textContent=commentResult.error.message;
-return;
-}
+const {data:profiles}=await db.from("profiles")
+.select("id,username").in("id",ids);
 
 const names={};
-(profileResult.data||[]).forEach(p=>names[p.id]=p.username);
-
-const commentUserIds=[
-...new Set((commentResult.data||[]).map(c=>c.user_id))
-];
-
-const commentNames={...names};
-const missing=commentUserIds.filter(id=>!commentNames[id]);
-
-if(missing.length){
-const r=await supabaseClient.from("profiles")
-.select("id,username").in("id",missing);
-
-if(!r.error){
-(r.data||[]).forEach(p=>commentNames[p.id]=p.username);
-}
-}
+(profiles||[]).forEach(p=>names[p.id]=p.username);
 
 posts.forEach(post=>{
-const postLikes=(likeResult.data||[])
-.filter(l=>l.post_id===post.id);
+const article=document.createElement("div");
+article.className="post";
 
-const liked=postLikes.some(l=>l.user_id===currentUser.id);
+const content=document.createElement("div");
+content.className="post-content";
 
-const postComments=(commentResult.data||[])
-.filter(c=>c.post_id===post.id);
+const user=document.createElement("b");
+user.textContent="@"+(names[post.user_id]||"Member");
 
-const article=makeElement("article",undefined,"post");
+const caption=document.createElement("p");
+caption.textContent=post.caption||"";
 
-const head=makeElement("div",undefined,"post-head");
-const user=makeElement("b",names[post.user_id]||"Fedbook Member");
-const date=makeElement(
-"span",
-post.created_at?new Date(post.created_at).toLocaleString():"",
-"muted"
-);
+const date=document.createElement("small");
+date.className="muted";
+date.textContent=new Date(post.created_at).toLocaleString();
 
-const date=makeElement(
-"span",
-post.created_at ? new Date(post.created_at).toLocaleString() : "",
-"muted"
-);
+content.append(user,caption,date);
 
-head.append(user,date);
-article.appendChild(head);
+if(post.image_url){
+const img=document.createElement("img");
+img.src=post.image_url;
+article.appendChild(img);
+}
+article.appendChild(content);
+feed.appendChild(article);
+});
+}
+
+$("refresh").onclick=loadPosts;
+
+async function restoreSession(){
+const {data,error}=await db.auth.getSession();
+if(error){
+message("authMessage",error.message);
+return;
+}
+if(data.session){
+const user=data.session.user;
+const {data:profile}=await db.from("profiles")
+.select("username").eq("id",user.id).maybeSingle();
+const username=profile?.username||user.user_metadata?.username||"Member";
+showApp(user,username);
+}
+}
+restoreSession();
+</script>
+</body>
+</html>
