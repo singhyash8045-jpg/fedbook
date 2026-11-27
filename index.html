@@ -760,4 +760,11 @@ post.created_at?new Date(post.created_at).toLocaleString():"",
 "muted"
 );
 
-head.append(user,da
+const date=makeElement(
+"span",
+post.created_at ? new Date(post.created_at).toLocaleString() : "",
+"muted"
+);
+
+head.append(user,date);
+article.appendChild(head);
