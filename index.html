@@ -1,200 +1,484 @@
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Fedbook Login</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fedbook</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#080d18;color:#eef4fc;font-family:Arial,sans-serif;min-height:100vh;display:grid;place-items:center;padding:20px}
-.card{width:100%;max-width:390px;background:#111d31;border:1px solid #243653;border-radius:18px;padding:25px}
-.logo{text-align:center;font-size:42px;font-weight:bold;color:#168cff}
-h2{text-align:center}
-input{width:100%;padding:14px;margin:9px 0;background:#080d18;border:1px solid #354967;border-radius:9px;color:white;font-size:16px}
-button{width:100%;padding:14px;margin-top:12px;background:#168cff;border:0;border-radius:9px;color:white;font-size:16px;font-weight:bold}
-.switch{text-align:center;color:#91a8c5;margin-top:18px;cursor:pointer}
-#message{text-align:center;color:#ffb4b4;font-size:14px;margin-top:15px}
-#profile{display:none;text-align:center}
-.muted{color:#91a8c5}
+body{margin:0;background:#080d18;color:#eef4fc;font-family:Arial,sans-serif}
+header{background:#111d31;padding:15px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:5}
+h1{color:#168cff;margin:0}
+main{max-width:650px;margin:auto;padding:12px}
+.card{background:#111d31;border:1px solid #243653;border-radius:13px;padding:15px;margin:14px 0}
+input,button,select{width:100%;padding:12px;margin:6px 0;border-radius:8px;border:1px solid #344967;background:#080d18;color:white}
+button{background:#168cff;border:0;font-weight:bold;cursor:pointer}
+button.secondary{background:#26364d}
+.hidden{display:none}
+.muted{color:#91a8c5;font-size:13px}
+.story,.track{border-top:1px solid #344967;padding:12px 0}
+.story img,.story video{width:100%;max-height:400px;object-fit:contain;border-radius:10px}
+audio{width:100%;margin:8px 0}
 </style>
 </head>
 <body>
+
+<header>
+<h1>FB Fedbook</h1>
+<button id="logout" class="secondary hidden" style="width:auto">Logout</button>
+</header>
+
+<main>
+
+<section id="auth">
 <div class="card">
-  <div class="logo">FB</div>
+<h2>Welcome to Fedbook</h2>
+<h3>Create Account</h3>
+<input id="newUser" placeholder="Username (3-20 characters)">
+<input id="newPass" type="password" placeholder="Password (minimum 6 characters)">
+<button id="register">Create Account</button>
 
-  <section id="auth">
-    <h2 id="heading">Login to Fedbook</h2>
-    <input id="username" placeholder="Username" maxlength="20" autocomplete="username">
-    <input id="password" type="password" placeholder="Password" autocomplete="current-password">
-    <button id="mainButton" onclick="submitAuth()">Login</button>
-    <div class="switch" onclick="toggleMode()" id="switchText">
-      Create a new account
-    </div>
-    <div id="message"></div>
-  </section>
+<hr>
 
-  <section id="profile">
-    <h2>Welcome to Fedbook!</h2>
-    <p class="muted">Your username</p>
-    <h2 id="profileName"></h2>
-    <p class="muted">Your account is logged in.</p>
-    <button onclick="logout()">Logout</button>
-  </section>
+<h3>Login</h3>
+<input id="loginUser" placeholder="Username">
+<input id="loginPass" type="password" placeholder="Password">
+<button id="login">Login</button>
+<p id="authMessage" class="muted"></p>
+</div>
+</section>
+
+<section id="app" class="hidden">
+
+<div class="card">
+<h2>My Profile</h2>
+<p id="profileName"></p>
+<p class="muted">Fedbook Member</p>
 </div>
 
-<script>
-const SUPABASE_URL = "https://eyvwfkavwppghmbjimgk.supabase.co";
-const SUPABASE_KEY = "sb_publishable_MC_4M9VxUmd5mZ1-r4Rs4g_eVZ8GxCG";
+<div class="card">
+<h2>🎵 My Music Library</h2>
+<p class="muted">Apne adhikar wale MP3 ya audio files upload karo.</p>
+<input id="musicFile" type="file" accept="audio/*">
+<button id="uploadMusic">Add Music to Library</button>
+<p id="musicMessage" class="muted"></p>
+<div id="savedMusic"></div>
+</div>
 
-const db = window.supabase.createClient(
+<div class="card">
+<h2>📸 Create Story</h2>
+<input id="storyFile" type="file" accept="image/*,video/*">
+<input id="storyCaption" placeholder="Write a caption">
+
+<label>Select Music</label>
+<select id="musicSelect">
+<option value="">No Music</option>
+</select>
+
+<button id="postStory">Upload Story</button>
+<p id="storyMessage" class="muted"></p>
+</div>
+
+<div class="card">
+<h2>🌟 Stories</h2>
+<button id="refreshStories" class="secondary">Refresh Stories</button>
+<div id="stories"></div>
+</div>
+
+</section>
+</main>
+
+<script>
+const SUPABASE_URL =
+"https://eyvwfkavwppghmbjimgk.supabase.co";
+
+const SUPABASE_KEY =
+"sb_publishable_MC_4M9VxUmd5mZ1-r4Rs4g_eVZ8GxCG";
+
+const supabaseClient = window.supabase.createClient(
   SUPABASE_URL,
   SUPABASE_KEY
 );
 
-let signupMode = false;
+const CLOUD_NAME = "g1vmdztf";
+const UPLOAD_PRESET = "Fedbook_upload";
 
-function showMessage(message, success=false) {
-  const el = document.getElementById("message");
-  el.textContent = message;
-  el.style.color = success ? "#64d99b" : "#ffb4b4";
+let currentUser = null;
+let musicList = [];
+
+const $ = id => document.getElementById(id);
+
+function msg(id,text){
+  $(id).textContent = text;
 }
 
-function toggleMode() {
-  signupMode = !signupMode;
-  document.getElementById("heading").textContent =
-    signupMode ? "Create Fedbook Account" : "Login to Fedbook";
-  document.getElementById("mainButton").textContent =
-    signupMode ? "Sign Up" : "Login";
-  document.getElementById("switchText").textContent =
-    signupMode ? "Already have an account? Login" : "Create a new account";
-  document.getElementById("password").value = "";
-  showMessage("");
-}
+// Cloudinary upload
+async function uploadCloudinary(file){
+  const form = new FormData();
+  form.append("file",file);
+  form.append("upload_preset",UPLOAD_PRESET);
 
-async function submitAuth() {
-  const username = document.getElementById("username").value
-    .trim().toLowerCase();
-  const password = document.getElementById("password").value;
-  const button = document.getElementById("mainButton");
+  const resourceType =
+    file.type.startsWith("image/") ? "image" : "video";
 
-  if (!/^[a-z0-9_]{3,20}$/.test(username)) {
-    showMessage("Username 3-20 characters ka ho. Letters, numbers aur _ use karo.");
-    return;
-  }
-
-  if (password.length < 6) {
-    showMessage("Password kam se kam 6 characters ka hona chahiye.");
-    return;
-  }
-
-  button.disabled = true;
-  button.textContent = "Please wait...";
-  showMessage("");
-
-  try {
-    const email = username + "@fedbook.app";
-
-    if (signupMode) {
-      const { data, error } = await db.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { username: username }
-        }
-      });
-
-      if (error) throw error;
-
-      if (!data.session) {
-        showMessage("Account bana, lekin session nahi mila. Supabase Email Confirmation setting check karo.");
-        return;
-      }
-
-      const { error: profileError } = await db
-        .from("profiles")
-        .insert({
-          id: data.user.id,
-          username: username
-        });
-
-      if (profileError) {
-        throw profileError;
-      }
-
-      showMessage("Account successfully created!", true);
-      await showProfile(data.user);
-    } else {
-      const { data, error } = await db.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (error) throw error;
-
-      await showProfile(data.user);
+  const response = await fetch(
+    `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`,
+    {
+      method:"POST",
+      body:form
     }
-  } catch (error) {
-    showMessage(error.message || "Login failed. Please try again.");
-  } finally {
-    button.disabled = false;
-    button.textContent = signupMode ? "Sign Up" : "Login";
+  );
+
+  const result = await response.json();
+
+  if(!response.ok){
+    throw new Error(result.error?.message || "Upload failed");
   }
+
+  return result.secure_url;
 }
 
-async function showProfile(user) {
-  let { data: profile, error } = await db
+// Profile
+async function saveProfile(user,username){
+  const {error} = await supabaseClient
+    .from("profiles")
+    .upsert({
+      id:user.id,
+      username:username
+    },{onConflict:"id"});
+
+  if(error) throw error;
+}
+
+async function getUsername(user){
+  const {data,error} = await supabaseClient
     .from("profiles")
     .select("username")
-    .eq("id", user.id)
+    .eq("id",user.id)
     .maybeSingle();
 
-  if (error) throw error;
+  if(error) throw error;
 
-  if (!profile && user.user_metadata?.username) {
-    const { data, error: insertError } = await db
-      .from("profiles")
+  return data?.username ||
+    user.user_metadata?.username ||
+    "Fedbook User";
+}
+
+function showApp(user,username){
+  currentUser = user;
+  $("auth").classList.add("hidden");
+  $("app").classList.remove("hidden");
+  $("logout").classList.remove("hidden");
+
+  $("profileName").textContent = "Username: " + username;
+
+  loadMusic();
+  loadStories();
+}
+
+// Register
+$("register").onclick = async()=>{
+  const username = $("newUser").value.trim().toLowerCase();
+  const password = $("newPass").value;
+
+  if(!/^[a-z0-9_]{3,20}$/.test(username)){
+    return msg("authMessage","Username 3-20 characters ka hona chahiye.");
+  }
+
+  if(password.length < 6){
+    return msg("authMessage","Password minimum 6 characters ka rakho.");
+  }
+
+  msg("authMessage","Account ban raha hai...");
+
+  try{
+    const {data,error} = await supabaseClient.auth.signUp({
+      email:username+"@fedbook.app",
+      password,
+      options:{data:{username}}
+    });
+
+    if(error) throw error;
+    if(!data.user) throw new Error("Account create nahi hua.");
+
+    if(data.session){
+      await saveProfile(data.user,username);
+      showApp(data.user,username);
+    }else{
+      msg("authMessage","Account bana. Email confirmation setting check karo, phir login karo.");
+    }
+  }catch(e){
+    msg("authMessage",e.message);
+  }
+};
+
+// Login
+$("login").onclick = async()=>{
+  const username = $("loginUser").value.trim().toLowerCase();
+  const password = $("loginPass").value;
+
+  if(!/^[a-z0-9_]{3,20}$/.test(username)){
+    return msg("authMessage","Sahi username likho.");
+  }
+
+  msg("authMessage","Login ho raha hai...");
+
+  const {data,error} = await supabaseClient.auth.signInWithPassword({
+    email:username+"@fedbook.app",
+    password
+  });
+
+  if(error) return msg("authMessage",error.message);
+
+  try{
+    await saveProfile(data.user,username);
+    showApp(data.user,username);
+  }catch(e){
+    msg("authMessage",e.message);
+  }
+};
+
+// Logout
+$("logout").onclick = async()=>{
+  await supabaseClient.auth.signOut();
+  location.reload();
+};
+
+// Upload music to library
+$("uploadMusic").onclick = async()=>{
+  const file = $("musicFile").files[0];
+
+  if(!file) return msg("musicMessage","Audio file select karo.");
+
+  if(!file.type.startsWith("audio/")){
+    return msg("musicMessage","Sirf audio file select karo.");
+  }
+
+  msg("musicMessage","Music upload ho raha hai...");
+
+  try{
+    const musicUrl = await uploadCloudinary(file);
+
+    const trackId =
+      "upload_" + Date.now() + "_" +
+      Math.random().toString(36).slice(2,8);
+
+    const title = file.name.replace(/\.[^/.]+$/,"");
+
+    const {error} = await supabaseClient
+      .from("saved_music")
       .insert({
-        id: user.id,
-        username: user.user_metadata.username
-      })
-      .select("username")
-      .single();
+        user_id:currentUser.id,
+        track_id:trackId,
+        title:title,
+        artist:"Your Music",
+        preview_url:musicUrl,
+        license_url:"",
+        provider:"User Upload"
+      });
 
-    if (insertError) throw insertError;
-    profile = data;
+    if(error) throw error;
+
+    $("musicFile").value = "";
+    msg("musicMessage","Music Library mein save ho gaya!");
+    loadMusic();
+
+  }catch(e){
+    msg("musicMessage",e.message);
+  }
+};
+
+// Load music
+async function loadMusic(){
+  const {data,error} = await supabaseClient
+    .from("saved_music")
+    .select("*")
+    .eq("user_id",currentUser.id)
+    .order("created_at",{ascending:false});
+
+  if(error){
+    return msg("savedMusic",error.message);
   }
 
-  document.getElementById("auth").style.display = "none";
-  document.getElementById("profile").style.display = "block";
-  document.getElementById("profileName").textContent =
-    profile?.username || "User";
-}
+  musicList = data || [];
 
-async function logout() {
-  await db.auth.signOut();
-  document.getElementById("profile").style.display = "none";
-  document.getElementById("auth").style.display = "block";
-  document.getElementById("password").value = "";
-  showMessage("Logged out successfully.", true);
-}
+  $("savedMusic").innerHTML = "";
+  $("musicSelect").innerHTML =
+    '<option value="">No Music</option>';
 
-async function checkSession() {
-  const { data, error } = await db.auth.getSession();
-  if (!error && data.session) {
-    await showProfile(data.session.user);
+  musicList.forEach((track,index)=>{
+    const option = document.createElement("option");
+    option.value = String(index);
+    option.textContent = track.title;
+    $("musicSelect").appendChild(option);
+
+    const div = document.createElement("div");
+    div.className = "track";
+
+    const title = document.createElement("b");
+    title.textContent = track.title;
+
+    const audio = document.createElement("audio");
+    audio.controls = true;
+    audio.src = track.preview_url;
+
+    const remove = document.createElement("button");
+    remove.className = "secondary";
+    remove.textContent = "Delete Music";
+
+    remove.onclick = async()=>{
+      if(!confirm("Delete this music?")) return;
+
+      const {error} = await supabaseClient
+        .from("saved_music")
+        .delete()
+        .eq("id",track.id)
+        .eq("user_id",currentUser.id);
+
+      if(error) return alert(error.message);
+
+      loadMusic();
+    };
+
+    div.append(title,audio,remove);
+    $("savedMusic").appendChild(div);
+  });
+
+  if(!musicList.length){
+    msg("savedMusic","Abhi Music Library khali hai.");
   }
 }
 
-db.auth.onAuthStateChange((event, session) => {
-  if (event === "SIGNED_OUT") {
-    document.getElementById("profile").style.display = "none";
-    document.getElementById("auth").style.display = "block";
-  }
-});
+// Create Story
+$("postStory").onclick = async()=>{
+  const file = $("storyFile").files[0];
 
-checkSession();
+  if(!file){
+    return msg("storyMessage","Photo ya video select karo.");
+  }
+
+  if(!file.type.startsWith("image/") &&
+     !file.type.startsWith("video/")){
+    return msg("storyMessage","Photo ya video file select karo.");
+  }
+
+  msg("storyMessage","Story upload ho rahi hai...");
+
+  try{
+    const mediaUrl = await uploadCloudinary(file);
+
+    const selectedIndex = $("musicSelect").value;
+    const selectedSong =
+      selectedIndex === "" ? null : musicList[Number(selectedIndex)];
+
+    const {error} = await supabaseClient
+      .from("stories")
+      .insert({
+        user_id:currentUser.id,
+        media_url:mediaUrl,
+        media_type:file.type.startsWith("video/")
+          ? "video"
+          : "image",
+        caption:$("storyCaption").value.trim(),
+        music_title:selectedSong?.title || null,
+        music_artist:selectedSong?.artist || null,
+        music_url:selectedSong?.preview_url || null,
+        music_source:selectedSong?.provider || null
+      });
+
+    if(error) throw error;
+
+    msg("storyMessage","Story successfully uploaded!");
+
+    $("storyFile").value = "";
+    $("storyCaption").value = "";
+    $("musicSelect").value = "";
+
+    loadStories();
+
+  }catch(e){
+    msg("storyMessage",e.message);
+  }
+};
+
+// Stories feed
+async function loadStories(){
+  const {data,error} = await supabaseClient
+    .from("stories")
+    .select("*")
+    .gt("expires_at",new Date().toISOString())
+    .order("created_at",{ascending:false});
+
+  if(error){
+    return msg("stories",error.message);
+  }
+
+  $("stories").innerHTML = "";
+
+  if(!data || !data.length){
+    return msg("stories","Abhi koi active story nahi hai.");
+  }
+
+  data.forEach(story=>{
+    const div = document.createElement("div");
+    div.className = "story";
+
+    const username = document.createElement("b");
+    username.textContent =
+      story.user_id === currentUser.id
+      ? "Your Story"
+      : "Fedbook Member";
+
+    const caption = document.createElement("p");
+    caption.textContent = story.caption || "";
+
+    const media = document.createElement(
+      story.media_type === "video" ? "video" : "img"
+    );
+
+    media.src = story.media_url;
+
+    if(story.media_type === "video"){
+      media.controls = true;
+    }else{
+      media.alt = "Story";
+    }
+
+    div.append(username,caption,media);
+
+    if(story.music_url){
+      const song = document.createElement("p");
+      song.className = "muted";
+      song.textContent = "🎵 " + (story.music_title || "Story Music");
+
+      const audio = document.createElement("audio");
+      audio.controls = true;
+      audio.src = story.music_url;
+
+      div.append(song,audio);
+    }
+
+    $("stories").appendChild(div);
+  });
+}
+
+$("refreshStories").onclick = loadStories;
+
+// Restore session
+(async()=>{
+  const {data} = await supabaseClient.auth.getSession();
+
+  if(data.session){
+    try{
+      const username = await getUsername(data.session.user);
+      showApp(data.session.user,username);
+    }catch(e){
+      msg("authMessage",e.message);
+    }
+  }
+})();
 </script>
 </body>
 </html>
