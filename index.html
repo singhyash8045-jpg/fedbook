@@ -1,6 +1,6 @@
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,73 +8,54 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#080b12;color:#fff;font-family:Arial,sans-serif}
-header{height:60px;background:#111827;border-bottom:1px solid #263247;display:flex;align-items:center;justify-content:space-between;padding:0 16px;position:sticky;top:0}
-.logo{font-size:23px;font-weight:bold;color:#3998ff}
-main{max-width:600px;margin:auto;padding:15px}
-.card{background:#111827;border:1px solid #29364a;border-radius:14px;padding:18px;margin:15px 0}
-input,textarea,button{width:100%;padding:13px;margin:7px 0;border-radius:9px;border:1px solid #34445c;background:#080b12;color:white}
-button{background:#1877f2;border:0;font-weight:bold;cursor:pointer}
-.secondary{background:#29364a}
-.hidden{display:none!important}
-.muted{color:#9aa9bd;font-size:13px}
-.post{background:#111827;border:1px solid #29364a;border-radius:13px;margin:15px 0;overflow:hidden}
-.post img{width:100%;max-height:500px;object-fit:contain;background:#000}
-.post-content{padding:14px}
-.actions{display:flex;gap:8px}
-.actions button{flex:1}
-h2{margin-top:0}
+body{margin:0;background:#080d18;color:#fff;font-family:Arial,sans-serif}
+header{padding:18px;background:#111827;text-align:center;font-size:24px;font-weight:bold}
+main{max-width:650px;margin:auto;padding:16px}
+.card{background:#151e2e;padding:16px;border-radius:14px;margin:14px 0}
+input,textarea,button{width:100%;padding:13px;margin:7px 0;border:0;border-radius:8px;font-size:15px}
+input,textarea{background:#263348;color:white}
+button{background:#2878f0;color:white;font-weight:bold}
+button:disabled{opacity:.5}
+.post{background:#151e2e;padding:15px;border-radius:12px;margin:14px 0}
+.post img{width:100%;border-radius:10px;margin-top:10px}
+.small{color:#aab7ca;font-size:13px}
+.hidden{display:none}
+h3{margin-top:5px}
 </style>
 </head>
 <body>
-<header>
-<div class="logo">UC Universal Chat</div>
-<button id="logout" class="secondary hidden" style="width:auto">Logout</button>
-</header>
+
+<header>UC · Universal Chat</header>
 
 <main>
 <section id="auth">
 <div class="card">
 <h2>Welcome to Universal Chat</h2>
-<p class="muted">Connect with everyone.</p>
-<h3>Create Account</h3>
-<input id="newUsername" placeholder="Username">
-<input id="newPassword" type="password" placeholder="Password (6+ characters)">
-<button id="signup">Create Account</button>
-<hr>
-<h3>Login</h3>
-<input id="username" placeholder="Username">
-<input id="password" type="password" placeholder="Password">
-<button id="login">Login</button>
-<p id="authMessage" class="muted"></p>
+<input id="username" placeholder="Username (3-20 characters)">
+<input id="password" type="password" placeholder="Password (minimum 6 characters)">
+<button onclick="signup()">Create Account</button>
+<button onclick="login()">Login</button>
+<p id="authMessage" class="small"></p>
 </div>
 </section>
 
 <section id="app" class="hidden">
 <div class="card">
-<h2 id="welcome">Home</h2>
-<p class="muted">Welcome to your Universal Chat community.</p>
+<h3 id="welcome">Welcome</h3>
+<button onclick="logout()">Logout</button>
 </div>
 
 <div class="card">
-<h2>Create Post</h2>
+<h3>Create Post</h3>
 <textarea id="caption" placeholder="What's happening?"></textarea>
 <input id="photo" type="file" accept="image/*">
-<button id="publish">Publish Post</button>
-<p id="postMessage" class="muted"></p>
+<button id="publishButton" onclick="publishPost()">Publish Post</button>
+<p id="postMessage" class="small"></p>
 </div>
 
-<div class="card">
-<h2>Home Feed</h2>
-<button id="refresh" class="secondary">Refresh Posts</button>
+<h3>Home Feed</h3>
+<button onclick="loadPosts()">Refresh Posts</button>
 <div id="feed"></div>
-</div>
-
-<div class="card">
-<h2>My Profile</h2>
-<p id="profile"></p>
-<p class="muted">Universal Chat Member</p>
-</div>
 </section>
 </main>
 
@@ -84,200 +65,232 @@ const SUPABASE_KEY="sb_publishable_X_Mv4fdvzlN437ZStGuxdA_0lBnvzX6";
 const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 let currentUser=null;
-let currentUsername="";
 
-const $=id=>document.getElementById(id);
-function message(id,text){$(id).textContent=text;}
+function message(id,text){
+ document.getElementById(id).textContent=text;
+}
 
-function showApp(user,username){
-currentUser=user;
-currentUsername=username;
-$("auth").classList.add("hidden");
-$("app").classList.remove("hidden");
-$("logout").classList.remove("hidden");
-$("welcome").textContent="Welcome, "+username;
-$("profile").textContent="@"+username;
-loadPosts();
+function clean(value){
+ return String(value??"").replace(/[&<>"']/g,c=>({
+ "&":"&amp;","<":"&lt;",">":"&gt;",
+ '"':"&quot;","'":"&#39;"
+ }[c]));
 }
 
 async function saveProfile(user,username){
-const {error}=await db.from("profiles").upsert({
-id:user.id,
-username:username
-},{onConflict:"id"});
-if(error)throw error;
+ const {error}=await db.from("profiles").upsert({
+  id:user.id,
+  username:username
+ });
+ if(error) throw error;
 }
 
-$("signup").onclick=async()=>{
-const username=$("newUsername").value.trim().toLowerCase();
-const password=$("newPassword").value;
+async function signup(){
+ const username=document.getElementById("username").value.trim().toLowerCase();
+ const password=document.getElementById("password").value;
 
-if(!/^[a-z0-9_]{3,20}$/.test(username)){
-message("authMessage","Username 3-20 characters ka hona chahiye.");
-return;
-}
-if(password.length<6){
-message("authMessage","Password kam se kam 6 characters ka rakho.");
-return;
-}
+ if(!/^[a-z0-9_]{3,20}$/.test(username)){
+  return message("authMessage","Username 3-20 characters ka ho.");
+ }
+ if(password.length<6){
+  return message("authMessage","Password kam se kam 6 characters ka ho.");
+ }
 
-message("authMessage","Account creating...");
-$("signup").disabled=true;
+ message("authMessage","Account ban raha hai...");
 
-try{
-const {data,error}=await db.auth.signUp({
-email:username+"@universalchat.app",
-password:password,
-options:{data:{username:username}}
-});
-if(error)throw error;
-if(!data.user)throw new Error("Account create nahi hua.");
-
-if(data.session){
-await saveProfile(data.user,username);
-showApp(data.user,username);
-}else{
-message("authMessage","Account ban gaya. Email confirmation ke baad login karo.");
-}
-}catch(e){
-message("authMessage",e.message);
-}finally{
-$("signup").disabled=false;
-}
-};
-
-$("login").onclick=async()=>{
-const username=$("username").value.trim().toLowerCase();
-const password=$("password").value;
-
-if(!username||!password){
-message("authMessage","Username aur password likho.");
-return;
+ try{
+  const {data,error}=await db.auth.signUp({
+   email:username+"@universalchat.app",
+   password:password,
+   options:{data:{username:username}}
+  });
+  if(error) throw error;
+  if(!data.session){
+   return message("authMessage","Confirmation setting check karo. Email confirmation OFF hona chahiye.");
+  }
+  await saveProfile(data.user,username);
+  currentUser=data.user;
+  showApp(username);
+ }catch(e){
+  message("authMessage",e.message);
+ }
 }
 
-message("authMessage","Logging in...");
-$("login").disabled=true;
+async function login(){
+ const username=document.getElementById("username").value.trim().toLowerCase();
+ const password=document.getElementById("password").value;
 
-try{
-const {data,error}=await db.auth.signInWithPassword({
-email:username+"@universalchat.app",
-password:password
-});
-if(error)throw error;
+ if(!username||!password){
+  return message("authMessage","Username aur password bharo.");
+ }
 
-await saveProfile(data.user,username);
-showApp(data.user,username);
-}catch(e){
-message("authMessage","Login Error: "+e.message);
-}finally{
-$("login").disabled=false;
-}
-};
+ message("authMessage","Login ho raha hai...");
 
-$("logout").onclick=async()=>{
-await db.auth.signOut();
-location.reload();
-};
+ try{
+  const {data,error}=await db.auth.signInWithPassword({
+   email:username+"@universalchat.app",
+   password:password
+  });
+  if(error) throw error;
 
-$("publish").onclick=async()=>{
-const caption=$("caption").value.trim();
-const file=$("photo").files[0];
-
-if(!caption&&!file){
-message("postMessage","Caption ya photo add karo.");
-return;
-}
-if(file){
-message("postMessage","Photo upload ke liye Cloudinary setup abhi baaki hai.");
-return;
+  currentUser=data.user;
+  await saveProfile(currentUser,username);
+  showApp(username);
+ }catch(e){
+  message("authMessage",e.message);
+ }
 }
 
-try{
-const {error}=await db.from("posts").insert({
-user_id:currentUser.id,
-caption:caption,
-image_url:null
-});
-if(error)throw error;
-$("caption").value="";
-message("postMessage","Post published!");
-loadPosts();
-}catch(e){
-message("postMessage",e.message);
+function showApp(username){
+ document.getElementById("auth").classList.add("hidden");
+ document.getElementById("app").classList.remove("hidden");
+ document.getElementById("welcome").textContent="Welcome, "+username;
+ loadPosts();
 }
-};
+
+async function logout(){
+ await db.auth.signOut();
+ currentUser=null;
+ document.getElementById("app").classList.add("hidden");
+ document.getElementById("auth").classList.remove("hidden");
+}
+
+async function publishPost(){
+ if(!currentUser) return;
+
+ const caption=document.getElementById("caption").value.trim();
+ const file=document.getElementById("photo").files[0];
+ const button=document.getElementById("publishButton");
+
+ if(!caption&&!file){
+  return message("postMessage","Text ya photo select karo.");
+ }
+
+ if(file && !file.type.startsWith("image/")){
+  return message("postMessage","Sirf image file select karo.");
+ }
+
+ if(file && file.size>5*1024*1024){
+  return message("postMessage","Photo 5 MB se chhoti honi chahiye.");
+ }
+
+ button.disabled=true;
+ message("postMessage","Post upload ho rahi hai...");
+
+ try{
+  let imagePath=null;
+
+  if(file){
+   const safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,"_");
+   imagePath=currentUser.id+"/"+Date.now()+"_"+safeName;
+
+   const {error:uploadError}=await db.storage
+    .from("post-images")
+    .upload(imagePath,file,{upsert:false});
+
+   if(uploadError) throw uploadError;
+  }
+
+  const {error}=await db.from("posts").insert({
+   user_id:currentUser.id,
+   caption:caption,
+   image_url:imagePath
+  });
+
+  if(error){
+   if(imagePath){
+    await db.storage.from("post-images").remove([imagePath]);
+   }
+   throw error;
+  }
+
+  document.getElementById("caption").value="";
+  document.getElementById("photo").value="";
+  message("postMessage","Post successfully publish ho gayi!");
+  await loadPosts();
+
+ }catch(e){
+  message("postMessage",e.message);
+ }finally{
+  button.disabled=false;
+ }
+}
 
 async function loadPosts(){
-if(!currentUser)return;
-const feed=$("feed");
-feed.textContent="Loading posts...";
+ const feed=document.getElementById("feed");
+ feed.textContent="Posts load ho rahe hain...";
 
-const {data:posts,error}=await db.from("posts")
-.select("*").order("created_at",{ascending:false});
+ try{
+  const {data:posts,error}=await db.from("posts")
+   .select("id,user_id,caption,image_url,created_at")
+   .order("created_at",{ascending:false})
+   .limit(50);
 
-if(error){
-feed.textContent=error.message;
-return;
+  if(error) throw error;
+
+  if(!posts.length){
+   feed.textContent="Abhi koi post nahi hai.";
+   return;
+  }
+
+  const ids=[...new Set(posts.map(p=>p.user_id))];
+  const {data:profiles,error:profileError}=await db.from("profiles")
+   .select("id,username")
+   .in("id",ids);
+
+  if(profileError) throw profileError;
+
+  const names={};
+  (profiles||[]).forEach(p=>names[p.id]=p.username);
+
+  feed.innerHTML="";
+
+  for(const post of posts){
+   const card=document.createElement("div");
+   card.className="post";
+
+   const name=names[post.user_id]||"Member";
+   let imageHTML="";
+
+   if(post.image_url){
+    const {data:signed,error:signedError}=await db.storage
+     .from("post-images")
+     .createSignedUrl(post.image_url,3600);
+
+    if(!signedError&&signed?.signedUrl){
+     imageHTML='<img src="'+clean(signed.signedUrl)+'" alt="Post photo">';
+    }else{
+     imageHTML='<p class="small">Photo load nahi hui.</p>';
+    }
+   }
+
+   card.innerHTML=
+    '<b>@'+clean(name)+'</b>'+
+    '<p>'+clean(post.caption)+'</p>'+
+    imageHTML+
+    '<p class="small">'+
+    (post.created_at?new Date(post.created_at).toLocaleString():"")+
+    '</p>';
+
+   feed.appendChild(card);
+  }
+
+ }catch(e){
+  feed.textContent="Error: "+e.message;
+ }
 }
-feed.innerHTML="";
-
-if(!posts.length){
-feed.textContent="No posts yet. Be the first to post!";
-return;
-}
-
-const ids=[...new Set(posts.map(p=>p.user_id))];
-const {data:profiles}=await db.from("profiles")
-.select("id,username").in("id",ids);
-
-const names={};
-(profiles||[]).forEach(p=>names[p.id]=p.username);
-
-posts.forEach(post=>{
-const article=document.createElement("div");
-article.className="post";
-
-const content=document.createElement("div");
-content.className="post-content";
-
-const user=document.createElement("b");
-user.textContent="@"+(names[post.user_id]||"Member");
-
-const caption=document.createElement("p");
-caption.textContent=post.caption||"";
-
-const date=document.createElement("small");
-date.className="muted";
-date.textContent=new Date(post.created_at).toLocaleString();
-
-content.append(user,caption,date);
-
-if(post.image_url){
-const img=document.createElement("img");
-img.src=post.image_url;
-article.appendChild(img);
-}
-article.appendChild(content);
-feed.appendChild(article);
-});
-}
-
-$("refresh").onclick=loadPosts;
 
 async function restoreSession(){
-const {data,error}=await db.auth.getSession();
-if(error){
-message("authMessage",error.message);
-return;
+ const {data,error}=await db.auth.getSession();
+ if(error) return;
+
+ if(data.session){
+  currentUser=data.session.user;
+  const username=currentUser.user_metadata?.username||"Member";
+  showApp(username);
+ }
 }
-if(data.session){
-const user=data.session.user;
-const {data:profile}=await db.from("profiles")
-.select("username").eq("id",user.id).maybeSingle();
-const username=profile?.username||user.user_metadata?.username||"Member";
-showApp(user,username);
-}
-}
+
 restoreSession();
 </script>
 </body>
