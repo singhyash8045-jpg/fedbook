@@ -3,241 +3,376 @@
 <html lang="hi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Universal Chat</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#080d18;color:white;font-family:Arial}
-header{background:#111827;padding:18px;text-align:center;font-size:25px;font-weight:bold}
-main{max-width:650px;margin:auto;padding:15px}
-.card,.post{background:#151e2e;padding:16px;border-radius:13px;margin:14px 0}
-input,textarea,button{width:100%;padding:13px;margin:7px 0;border:0;border-radius:8px;font-size:15px}
-input,textarea{background:#263348;color:white}
-button{background:#2878f0;color:white;font-weight:bold}
-.delete{background:#d52f3e}
-.small{color:#aab7ca;font-size:13px}
-.hidden{display:none}
-.post img{width:100%;border-radius:10px;margin-top:10px}
+body{margin:0;background:#080d16;color:white;font-family:Arial,sans-serif}
+header{padding:15px;background:#101827;position:sticky;top:0;z-index:5;border-bottom:1px solid #263448}
+h2{margin:0;color:#fff}
+button{border:0;padding:11px;border-radius:10px;background:#2563eb;color:white;font-weight:bold}
+input,textarea{width:100%;padding:12px;margin:7px 0;background:#172233;color:white;border:1px solid #34445a;border-radius:10px}
+.container{max-width:600px;margin:auto;padding:12px}
+.card{background:#111c2c;padding:14px;border-radius:14px;margin:12px 0}
+.hidden{display:none!important}
+.storybar{display:flex;overflow-x:auto;gap:12px;padding:12px 0}
+.storyuser{min-width:70px;text-align:center;cursor:pointer}
+.storyring{width:65px;height:65px;border-radius:50%;padding:3px;background:linear-gradient(45deg,#ffb300,#ff006e,#8338ec)}
+.storyring img{width:100%;height:100%;border-radius:50%;object-fit:cover;border:3px solid #101827}
+.storyuser p{font-size:12px;overflow:hidden;text-overflow:ellipsis}
+.postimg{width:100%;max-height:500px;object-fit:contain;border-radius:10px;margin-top:10px}
+#storyViewer{position:fixed;inset:0;background:#000;z-index:99;display:flex;align-items:center;justify-content:center}
+#storyViewer img,#storyViewer video{max-width:100%;max-height:85vh}
+.storytop{position:absolute;top:20px;left:15px;right:15px;color:white}
+#storyProgress{height:4px;background:#777;margin-bottom:12px}
+#storyProgress div{height:4px;background:white;width:100%}
+.close{position:absolute;right:15px;top:15px;font-size:28px;background:none}
 </style>
 </head>
 <body>
-<header>UC · Universal Chat</header>
-<main>
 
-<section id="auth">
-<div class="card">
-<h2>Welcome to Universal Chat</h2>
-<input id="username" placeholder="Username">
+<header>
+<h2>UC · Universal Chat</h2>
+<button onclick="logout()" id="logoutBtn" class="hidden">Logout</button>
+</header>
+
+<div class="container">
+
+<div id="auth" class="card">
+<h3>Login / Create Account</h3>
+<input id="username" placeholder="Username (3-20 characters)">
 <input id="password" type="password" placeholder="Password">
 <button onclick="signup()">Create Account</button>
 <button onclick="login()">Login</button>
-<p id="authMessage" class="small"></p>
+<p id="authmsg"></p>
 </div>
-</section>
 
-<section id="app" class="hidden">
+<div id="app" class="hidden">
+
 <div class="card">
-<h3 id="welcome"></h3>
-<button onclick="logout()">Logout</button>
+<h3>Stories</h3>
+<div class="storybar" id="storybar"></div>
+<button onclick="document.getElementById('storyFile').click()">＋ Add Story</button>
+<input type="file" id="storyFile" accept="image/*,video/*" hidden onchange="uploadStory(this)">
 </div>
 
 <div class="card">
 <h3>Create Post</h3>
-<textarea id="caption" placeholder="What's happening?"></textarea>
-<input id="photo" type="file" accept="image/*">
-<button id="publishButton" onclick="publishPost()">Publish Post</button>
-<p id="postMessage" class="small"></p>
+<textarea id="postText" placeholder="What's happening?"></textarea>
+<input type="file" id="postFile" accept="image/*,video/*">
+<button onclick="createPost()">Publish Post</button>
 </div>
 
-<h3>Home Feed</h3>
-<button onclick="loadPosts()">Refresh Posts</button>
 <div id="feed"></div>
-</section>
+</div>
+</div>
 
-</main>
+<div id="storyViewer" class="hidden" onclick="closeStory()">
+<button class="close">×</button>
+<div class="storytop">
+<div id="storyProgress"><div></div></div>
+<div id="storyName"></div>
+</div>
+<div id="storyMedia"></div>
+</div>
 
 <script>
 const SUPABASE_URL="https://pncaubpjfthccofynxya.supabase.co";
 const SUPABASE_KEY="sb_publishable_X_Mv4fdvzlN437ZStGuxdA_0lBnvzX6";
-const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
 let currentUser=null;
 
-function msg(id,t){
- document.getElementById(id).textContent=t;
+async function init(){
+const {data}=await db.auth.getSession();
+if(data.session){
+currentUser=data.session.user;
+showApp();
 }
-function clean(v){
- return String(v??"").replace(/[&<>"']/g,c=>({
- "&":"&amp;","<":"&lt;",">":"&gt;",
- '"':"&quot;","'":"&#39;"
- }[c]));
 }
-async function saveProfile(user,username){
- const {error}=await db.from("profiles").upsert({
-  id:user.id,username
- });
- if(error)throw error;
+
+function showApp(){
+document.getElementById("auth").classList.add("hidden");
+document.getElementById("app").classList.remove("hidden");
+document.getElementById("logoutBtn").classList.remove("hidden");
+loadPosts();
+loadStories();
 }
-function showApp(username){
- document.getElementById("auth").classList.add("hidden");
- document.getElementById("app").classList.remove("hidden");
- document.getElementById("welcome").textContent="Welcome, "+username;
- loadPosts();
-}
+
 async function signup(){
- const u=document.getElementById("username").value.trim().toLowerCase();
- const p=document.getElementById("password").value;
- if(!/^[a-z0-9_]{3,20}$/.test(u))
-  return msg("authMessage","Username 3-20 characters ka ho.");
- if(p.length<6)return msg("authMessage","Password minimum 6 characters.");
- msg("authMessage","Account ban raha hai...");
- try{
-  const {data,error}=await db.auth.signUp({
-   email:u+"@universalchat.app",password:p,
-   options:{data:{username:u}}
-  });
-  if(error)throw error;
-  if(!data.session)return msg("authMessage","Email confirmation OFF karke dobara try karo.");
-  await saveProfile(data.user,u);
-  currentUser=data.user;
-  showApp(u);
- }catch(e){msg("authMessage",e.message);}
+let u=username.value.trim().toLowerCase();
+let p=password.value;
+if(u.length<3||u.length>20){
+authmsg.innerText="Username 3-20 characters ka hona chahiye";
+return;
 }
+if(p.length<6){
+authmsg.innerText="Password kam se kam 6 characters";
+return;
+}
+const {data,error}=await db.auth.signUp({
+email:u+"@universalchat.app",
+password:p,
+options:{data:{username:u}}
+});
+if(error){authmsg.innerText=error.message;return}
+currentUser=data.user;
+if(currentUser){
+await saveProfile(u);
+showApp();
+}else{
+authmsg.innerText="Account ban gaya. Login karo.";
+}
+}
+
 async function login(){
- const u=document.getElementById("username").value.trim().toLowerCase();
- const p=document.getElementById("password").value;
- msg("authMessage","Login ho raha hai...");
- try{
-  const {data,error}=await db.auth.signInWithPassword({
-   email:u+"@universalchat.app",password:p
-  });
-  if(error)throw error;
-  currentUser=data.user;
-  await saveProfile(currentUser,u);
-  showApp(u);
- }catch(e){msg("authMessage",e.message);}
+let u=username.value.trim().toLowerCase();
+let p=password.value;
+const {data,error}=await db.auth.signInWithPassword({
+email:u+"@universalchat.app",
+password:p
+});
+if(error){authmsg.innerText=error.message;return}
+currentUser=data.user;
+showApp();
 }
+
+async function saveProfile(u){
+await db.from("profiles").upsert({
+id:currentUser.id,
+username:u
+});
+}
+
 async function logout(){
- await db.auth.signOut();
- currentUser=null;
- document.getElementById("app").classList.add("hidden");
- document.getElementById("auth").classList.remove("hidden");
-}
-async function publishPost(){
- const caption=document.getElementById("caption").value.trim();
- const file=document.getElementById("photo").files[0];
- const button=document.getElementById("publishButton");
- if(!caption&&!file)return msg("postMessage","Text ya photo select karo.");
- if(file&&!file.type.startsWith("image/"))return msg("postMessage","Sirf image select karo.");
- if(file&&file.size>5*1024*1024)return msg("postMessage","Photo 5 MB se chhoti honi chahiye.");
- button.disabled=true;
- msg("postMessage","Post upload ho rahi hai...");
- try{
-  let imagePath=null;
-  if(file){
-   imagePath=currentUser.id+"/"+Date.now()+"_"+file.name.replace(/[^a-zA-Z0-9._-]/g,"_");
-   const {error}=await db.storage.from("post-images").upload(imagePath,file);
-   if(error)throw error;
-  }
-  const {error}=await db.from("posts").insert({
-   user_id:currentUser.id,caption,image_url:imagePath
-  });
-  if(error){
-   if(imagePath)await db.storage.from("post-images").remove([imagePath]);
-   throw error;
-  }
-  document.getElementById("caption").value="";
-  document.getElementById("photo").value="";
-  msg("postMessage","Post publish ho gayi!");
-  await loadPosts();
- }catch(e){msg("postMessage",e.message);}
- finally{button.disabled=false;}
+await db.auth.signOut();
+location.reload();
 }
 
-async function deletePost(id,imagePath){
- if(!confirm("Kya apni post delete karni hai?"))return;
- try{
-  const {data,error}=await db.from("posts")
-   .delete()
-   .eq("id",id)
-   .eq("user_id",currentUser.id)
-   .select("id");
+async function uploadFile(file,folder){
+let ext=file.name.split(".").pop();
+let path=currentUser.id+"/"+folder+"/"+Date.now()+"."+ext;
 
-  if(error)throw error;
-  if(!data || data.length===0){
-   throw new Error("Post delete nahi hui. Supabase DELETE policy check karo.");
-  }
+const {error}=await db.storage.from("post-images").upload(path,file);
+if(error)throw error;
 
-  if(imagePath){
-   const {error:photoError}=await db.storage
-    .from("post-images").remove([imagePath]);
-   if(photoError)console.error(photoError.message);
-  }
+const {data}=await db.storage.from("post-images").createSignedUrl(path,3600);
+return {url:data.signedUrl,path};
+}
 
-  alert("Post delete ho gayi!");
-  await loadPosts();
- }catch(e){
-  alert("Delete Error: "+e.message);
- }
+async function createPost(){
+try{
+let text=postText.value.trim();
+let file=postFile.files[0];
+if(!text&&!file)return alert("Post likho ya photo chuno");
+
+let media=null;
+if(file)media=await uploadFile(file,"posts");
+
+const {error}=await db.from("posts").insert({
+user_id:currentUser.id,
+content:text,
+image_url:media?media.path:null
+});
+if(error)throw error;
+
+postText.value="";
+postFile.value="";
+loadPosts();
+}catch(e){alert("Post error: "+e.message)}
 }
 
 async function loadPosts(){
- const feed=document.getElementById("feed");
- feed.textContent="Posts load ho rahe hain...";
- try{
-  const {data:posts,error}=await db.from("posts")
-   .select("id,user_id,caption,image_url,created_at")
-   .order("created_at",{ascending:false}).limit(50);
-  if(error)throw error;
-  if(!posts.length){feed.textContent="Abhi koi post nahi hai.";return;}
+const {data:posts,error}=await db.from("posts")
+.select("*").order("created_at",{ascending:false});
 
-  const ids=[...new Set(posts.map(p=>p.user_id))];
-  const {data:profiles,error:pe}=await db.from("profiles")
-   .select("id,username").in("id",ids);
-  if(pe)throw pe;
-  const names={};
-  (profiles||[]).forEach(p=>names[p.id]=p.username);
+if(error){feed.innerText=error.message;return}
 
-  feed.innerHTML="";
-  for(const post of posts){
-   const card=document.createElement("div");
-   card.className="post";
-   const own=post.user_id===currentUser.id;
-   let imageHTML="";
+feed.innerHTML="";
 
-   if(post.image_url){
-    const {data:signed,error:se}=await db.storage
-     .from("post-images").createSignedUrl(post.image_url,3600);
-    if(!se&&signed?.signedUrl)
-     imageHTML='<img src="'+clean(signed.signedUrl)+'" alt="Post photo">';
-    else imageHTML='<p class="small">Photo load nahi hui.</p>';
-   }
+for(const p of posts||[]){
+let {data:profile}=await db.from("profiles")
+.select("username").eq("id",p.user_id).maybeSingle();
 
-   card.innerHTML=
-    '<b>@'+clean(names[post.user_id]||"Member")+'</b>'+
-    '<p>'+clean(post.caption)+'</p>'+
-    imageHTML+
-    '<p class="small">'+(post.created_at?new Date(post.created_at).toLocaleString():"")+'</p>'+
-    (own?'<button class="delete">Delete Post</button>':'');
-
-   if(own){
-    card.querySelector(".delete").addEventListener("click",()=>{
-     deletePost(post.id,post.image_url);
-    });
-   }
-   feed.appendChild(card);
-  }
- }catch(e){feed.textContent="Error: "+e.message;}
+let mediaUrl="";
+if(p.image_url){
+let {data}=await db.storage.from("post-images")
+.createSignedUrl(p.image_url,3600);
+if(data)mediaUrl=data.signedUrl;
 }
 
-async function restoreSession(){
- const {data}=await db.auth.getSession();
- if(data.session){
-  currentUser=data.session.user;
-  showApp(currentUser.user_metadata?.username||"Member");
- }
+let card=document.createElement("div");
+card.className="card";
+
+let name=document.createElement("b");
+name.innerText=profile?.username||"User";
+
+let txt=document.createElement("p");
+txt.innerText=p.content||"";
+
+card.append(name,txt);
+
+if(mediaUrl){
+let img=document.createElement("img");
+img.className="postimg";
+img.src=mediaUrl;
+card.append(img);
 }
-restoreSession();
+
+if(p.user_id===currentUser.id){
+let del=document.createElement("button");
+del.innerText="Delete Post";
+del.style.background="#b91c1c";
+del.onclick=()=>deletePost(p);
+card.append(del);
+}
+
+feed.append(card);
+}
+}
+
+async function deletePost(p){
+if(!confirm("Post delete karna hai?"))return;
+
+const {error}=await db.from("posts")
+.delete().eq("id",p.id).eq("user_id",currentUser.id);
+
+if(error){alert(error.message);return}
+
+if(p.image_url){
+await db.storage.from("post-images").remove([p.image_url]);
+}
+loadPosts();
+}
+
+async function uploadStory(input){
+try{
+let file=input.files[0];
+if(!file)return;
+
+let type=file.type.startsWith("video/")?"video":"image";
+if(file.size>50*1024*1024){
+alert("File 50 MB se chhoti honi chahiye");
+return;
+}
+
+let media=await uploadFile(file,"stories");
+
+const {error}=await db.from("stories").insert({
+user_id:currentUser.id,
+media_url:media.path,
+media_type:type,
+expires_at:new Date(Date.now()+24*60*60*1000).toISOString()
+});
+
+if(error)throw error;
+
+input.value="";
+alert("Story upload ho gayi!");
+loadStories();
+}catch(e){alert("Story error: "+e.message)}
+}
+
+async function loadStories(){
+const {data:stories,error}=await db.from("stories")
+.select("*")
+.gt("expires_at",new Date().toISOString())
+.order("created_at",{ascending:true});
+
+if(error){storybar.innerText=error.message;return}
+
+storybar.innerHTML="";
+
+let grouped={};
+for(let s of stories||[]){
+if(!grouped[s.user_id])grouped[s.user_id]=[];
+grouped[s.user_id].push(s);
+}
+
+for(let uid in grouped){
+let {data:profile}=await db.from("profiles")
+.select("username").eq("id",uid).maybeSingle();
+
+let item=document.createElement("div");
+item.className="storyuser";
+
+let ring=document.createElement("div");
+ring.className="storyring";
+
+let img=document.createElement("img");
+
+let first=grouped[uid][grouped[uid].length-1];
+let {data:url}=await db.storage.from("post-images")
+.createSignedUrl(first.media_url,3600);
+
+img.src=url?.signedUrl||"";
+ring.append(img);
+
+let label=document.createElement("p");
+label.innerText=uid===currentUser.id?"Your Story":profile?.username||"User";
+
+item.append(ring,label);
+item.onclick=()=>openStories(grouped[uid],profile?.username||"Your Story");
+storybar.append(item);
+}
+}
+
+let storyIndex=0;
+let activeStories=[];
+let storyTimer;
+
+async function openStories(stories,name){
+activeStories=stories;
+storyIndex=0;
+showStory(name);
+}
+
+async function showStory(name){
+clearTimeout(storyTimer);
+if(storyIndex>=activeStories.length){closeStory();return}
+
+let s=activeStories[storyIndex];
+storyName.innerText=name;
+
+storyMedia.innerHTML="";
+
+const {data}=await db.storage.from("post-images")
+.createSignedUrl(s.media_url,3600);
+
+if(!data){nextStory();return}
+
+let el=document.createElement(s.media_type==="video"?"video":"img");
+el.src=data.signedUrl;
+
+if(s.media_type==="video"){
+el.controls=true;
+el.autoplay=true;
+el.playsInline=true;
+}else{
+el.style.maxHeight="85vh";
+}
+
+storyMedia.append(el);
+storyViewer.classList.remove("hidden");
+
+storyTimer=setTimeout(nextStory,s.media_type==="video"?15000:5000);
+}
+
+function nextStory(){
+storyIndex++;
+showStory(storyName.innerText);
+}
+
+function closeStory(){
+clearTimeout(storyTimer);
+storyViewer.classList.add("hidden");
+storyMedia.innerHTML="";
+}
+
+init();
 </script>
 </body>
-</html>
+ </html>
+ 
