@@ -3,43 +3,40 @@
 <html lang="hi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Universal Chat</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#080d16;color:white;font-family:Arial,sans-serif}
-header{padding:15px;background:#101827;position:sticky;top:0;z-index:5;border-bottom:1px solid #263448}
-h2{margin:0;color:#fff}
-button{border:0;padding:11px;border-radius:10px;background:#2563eb;color:white;font-weight:bold}
-input,textarea{width:100%;padding:12px;margin:7px 0;background:#172233;color:white;border:1px solid #34445a;border-radius:10px}
+body{margin:0;background:#080d16;color:#fff;font-family:Arial}
+header{background:#101827;padding:15px;position:sticky;top:0;z-index:5}
+h2{margin:0}
+button{background:#2563eb;color:white;border:0;padding:12px;border-radius:10px;font-weight:bold;margin:4px}
+input,textarea{width:100%;padding:13px;margin:7px 0;background:#172233;color:white;border:1px solid #34445a;border-radius:10px}
 .container{max-width:600px;margin:auto;padding:12px}
 .card{background:#111c2c;padding:14px;border-radius:14px;margin:12px 0}
 .hidden{display:none!important}
-.storybar{display:flex;overflow-x:auto;gap:12px;padding:12px 0}
-.storyuser{min-width:70px;text-align:center;cursor:pointer}
-.storyring{width:65px;height:65px;border-radius:50%;padding:3px;background:linear-gradient(45deg,#ffb300,#ff006e,#8338ec)}
-.storyring img{width:100%;height:100%;border-radius:50%;object-fit:cover;border:3px solid #101827}
-.storyuser p{font-size:12px;overflow:hidden;text-overflow:ellipsis}
-.postimg{width:100%;max-height:500px;object-fit:contain;border-radius:10px;margin-top:10px}
-#storyViewer{position:fixed;inset:0;background:#000;z-index:99;display:flex;align-items:center;justify-content:center}
-#storyViewer img,#storyViewer video{max-width:100%;max-height:85vh}
-.storytop{position:absolute;top:20px;left:15px;right:15px;color:white}
-#storyProgress{height:4px;background:#777;margin-bottom:12px}
-#storyProgress div{height:4px;background:white;width:100%}
-.close{position:absolute;right:15px;top:15px;font-size:28px;background:none}
+.storybar{display:flex;gap:14px;overflow-x:auto;padding:15px 0}
+.storyuser{text-align:center;min-width:70px}
+.ring{width:68px;height:68px;border-radius:50%;padding:3px;background:linear-gradient(45deg,#ffb300,#ff006e,#8338ec)}
+.ring img{width:100%;height:100%;object-fit:cover;border-radius:50%;border:3px solid #101827}
+.storyuser p{font-size:12px}
+.media{width:100%;max-height:450px;object-fit:contain;margin-top:10px;border-radius:10px}
+#preview{width:100%;max-height:300px;object-fit:contain;margin-top:10px}
+#viewer{position:fixed;inset:0;background:#000;z-index:20;display:flex;align-items:center;justify-content:center}
+#viewer img,#viewer video{max-width:100%;max-height:85vh}
+#viewerName{position:absolute;top:20px;left:15px}
+.close{position:absolute;right:15px;top:10px;background:#333}
 </style>
 </head>
 <body>
 
 <header>
 <h2>UC · Universal Chat</h2>
-<button onclick="logout()" id="logoutBtn" class="hidden">Logout</button>
+<button id="logoutBtn" class="hidden" onclick="logout()">Logout</button>
 </header>
 
 <div class="container">
-
 <div id="auth" class="card">
 <h3>Login / Create Account</h3>
 <input id="username" placeholder="Username (3-20 characters)">
@@ -54,14 +51,21 @@ input,textarea{width:100%;padding:12px;margin:7px 0;background:#172233;color:whi
 <div class="card">
 <h3>Stories</h3>
 <div class="storybar" id="storybar"></div>
-<button onclick="document.getElementById('storyFile').click()">＋ Add Story</button>
-<input type="file" id="storyFile" accept="image/*,video/*" hidden onchange="uploadStory(this)">
+<button onclick="openPicker('story')">＋ Add Story</button>
+<input id="storyFile" type="file" accept="image/*,video/*" capture="environment" style="display:none">
+<div id="storyPreviewBox" class="hidden">
+<div id="storyPreview"></div>
+<button onclick="sendStory()">Upload Story</button>
+<button onclick="cancelStory()">Cancel</button>
+</div>
 </div>
 
 <div class="card">
 <h3>Create Post</h3>
 <textarea id="postText" placeholder="What's happening?"></textarea>
-<input type="file" id="postFile" accept="image/*,video/*">
+<button onclick="openPicker('post')">Choose Photo / Video</button>
+<input id="postFile" type="file" accept="image/*,video/*" style="display:none">
+<div id="postPreview" class="hidden"></div>
 <button onclick="createPost()">Publish Post</button>
 </div>
 
@@ -69,81 +73,75 @@ input,textarea{width:100%;padding:12px;margin:7px 0;background:#172233;color:whi
 </div>
 </div>
 
-<div id="storyViewer" class="hidden" onclick="closeStory()">
+<div id="viewer" class="hidden" onclick="closeViewer()">
 <button class="close">×</button>
-<div class="storytop">
-<div id="storyProgress"><div></div></div>
-<div id="storyName"></div>
-</div>
-<div id="storyMedia"></div>
+<div id="viewerName"></div>
+<div id="viewerMedia"></div>
 </div>
 
 <script>
-const SUPABASE_URL="https://pncaubpjfthccofynxya.supabase.co";
-const SUPABASE_KEY="sb_publishable_X_Mv4fdvzlN437ZStGuxdA_0lBnvzX6";
-const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const URL="https://pncaubpjfthccofynxya.supabase.co";
+const KEY="sb_publishable_X_Mv4fdvzlN437ZStGuxdA_0lBnvzX6";
+const db=supabase.createClient(URL,KEY);
 
-let currentUser=null;
+let me=null,selectedStory=null,selectedPost=null;
+let storyList=[],storyIndex=0,storyTimer=null;
+
+const $=id=>document.getElementById(id);
 
 async function init(){
 const {data}=await db.auth.getSession();
-if(data.session){
-currentUser=data.session.user;
-showApp();
-}
+if(data.session){me=data.session.user;showApp()}
 }
 
 function showApp(){
-document.getElementById("auth").classList.add("hidden");
-document.getElementById("app").classList.remove("hidden");
-document.getElementById("logoutBtn").classList.remove("hidden");
+$("auth").classList.add("hidden");
+$("app").classList.remove("hidden");
+$("logoutBtn").classList.remove("hidden");
 loadPosts();
 loadStories();
 }
 
 async function signup(){
-let u=username.value.trim().toLowerCase();
-let p=password.value;
-if(u.length<3||u.length>20){
-authmsg.innerText="Username 3-20 characters ka hona chahiye";
+let u=$("username").value.trim().toLowerCase();
+let p=$("password").value;
+if(!/^[a-z0-9_]{3,20}$/.test(u)){
+$("authmsg").innerText="Username 3-20 characters, letters/numbers only";
 return;
 }
-if(p.length<6){
-authmsg.innerText="Password kam se kam 6 characters";
-return;
-}
-const {data,error}=await db.auth.signUp({
+if(p.length<6){$("authmsg").innerText="Password kam se kam 6 characters";return}
+let {data,error}=await db.auth.signUp({
 email:u+"@universalchat.app",
 password:p,
 options:{data:{username:u}}
 });
-if(error){authmsg.innerText=error.message;return}
-currentUser=data.user;
-if(currentUser){
+if(error){$("authmsg").innerText=error.message;return}
+if(data.session){
+me=data.user;
 await saveProfile(u);
 showApp();
 }else{
-authmsg.innerText="Account ban gaya. Login karo.";
+$("authmsg").innerText="Account ban gaya. Ab Login karo.";
 }
 }
 
 async function login(){
-let u=username.value.trim().toLowerCase();
-let p=password.value;
-const {data,error}=await db.auth.signInWithPassword({
-email:u+"@universalchat.app",
-password:p
+let u=$("username").value.trim().toLowerCase();
+let p=$("password").value;
+let {data,error}=await db.auth.signInWithPassword({
+email:u+"@universalchat.app",password:p
 });
-if(error){authmsg.innerText=error.message;return}
-currentUser=data.user;
+if(error){$("authmsg").innerText=error.message;return}
+me=data.user;
+await saveProfile(u);
 showApp();
 }
 
 async function saveProfile(u){
-await db.from("profiles").upsert({
-id:currentUser.id,
-username:u
+let {error}=await db.from("profiles").upsert({
+id:me.id,username:u
 });
+if(error)console.log(error.message);
 }
 
 async function logout(){
@@ -151,228 +149,235 @@ await db.auth.signOut();
 location.reload();
 }
 
-async function uploadFile(file,folder){
-let ext=file.name.split(".").pop();
-let path=currentUser.id+"/"+folder+"/"+Date.now()+"."+ext;
-
-const {error}=await db.storage.from("post-images").upload(path,file);
-if(error)throw error;
-
-const {data}=await db.storage.from("post-images").createSignedUrl(path,3600);
-return {url:data.signedUrl,path};
+/* Gallery picker */
+function openPicker(type){
+let el=type==="story"?$("storyFile"):$("postFile");
+el.value="";
+el.click();
 }
 
-async function createPost(){
-try{
-let text=postText.value.trim();
-let file=postFile.files[0];
-if(!text&&!file)return alert("Post likho ya photo chuno");
+$("storyFile").addEventListener("change",function(){
+if(this.files&&this.files[0])previewStory(this.files[0]);
+});
 
-let media=null;
-if(file)media=await uploadFile(file,"posts");
+$("postFile").addEventListener("change",function(){
+if(this.files&&this.files[0])previewPost(this.files[0]);
+});
 
-const {error}=await db.from("posts").insert({
-user_id:currentUser.id,
-content:text,
-image_url:media?media.path:null
+function makePreview(file,target){
+let url=URL.createObjectURL(file);
+target.innerHTML="";
+let el=document.createElement(file.type.startsWith("video/")?"video":"img");
+el.src=url;
+if(el.tagName==="VIDEO"){el.controls=true;el.playsInline=true}
+el.style.width="100%";
+el.style.maxHeight="300px";
+el.style.objectFit="contain";
+target.append(el);
+target.classList.remove("hidden");
+}
+
+function previewStory(file){
+selectedStory=file;
+makePreview(file,$("storyPreview"));
+$("storyPreviewBox").classList.remove("hidden");
+}
+
+function previewPost(file){
+selectedPost=file;
+makePreview(file,$("postPreview"));
+}
+
+function cancelStory(){
+selectedStory=null;
+$("storyFile").value="";
+$("storyPreview").innerHTML="";
+$("storyPreviewBox").classList.add("hidden");
+}
+
+/* Upload */
+async function uploadMedia(file,folder){
+if(!file)throw new Error("File select nahi hui");
+let ext=(file.name.split(".").pop()||"jpg").replace(/[^a-zA-Z0-9]/g,"");
+let path=me.id+"/"+folder+"/"+Date.now()+"_"+Math.random().toString(36).slice(2)+"."+ext;
+
+let {error}=await db.storage.from("post-images").upload(path,file,{
+upsert:false,contentType:file.type||"application/octet-stream"
 });
 if(error)throw error;
-
-postText.value="";
-postFile.value="";
-loadPosts();
-}catch(e){alert("Post error: "+e.message)}
+return path;
 }
 
-async function loadPosts(){
-const {data:posts,error}=await db.from("posts")
-.select("*").order("created_at",{ascending:false});
-
-if(error){feed.innerText=error.message;return}
-
-feed.innerHTML="";
-
-for(const p of posts||[]){
-let {data:profile}=await db.from("profiles")
-.select("username").eq("id",p.user_id).maybeSingle();
-
-let mediaUrl="";
-if(p.image_url){
-let {data}=await db.storage.from("post-images")
-.createSignedUrl(p.image_url,3600);
-if(data)mediaUrl=data.signedUrl;
+async function signedUrl(path){
+let {data,error}=await db.storage.from("post-images").createSignedUrl(path,3600);
+if(error)throw error;
+return data.signedUrl;
 }
 
-let card=document.createElement("div");
-card.className="card";
-
-let name=document.createElement("b");
-name.innerText=profile?.username||"User";
-
-let txt=document.createElement("p");
-txt.innerText=p.content||"";
-
-card.append(name,txt);
-
-if(mediaUrl){
-let img=document.createElement("img");
-img.className="postimg";
-img.src=mediaUrl;
-card.append(img);
-}
-
-if(p.user_id===currentUser.id){
-let del=document.createElement("button");
-del.innerText="Delete Post";
-del.style.background="#b91c1c";
-del.onclick=()=>deletePost(p);
-card.append(del);
-}
-
-feed.append(card);
-}
-}
-
-async function deletePost(p){
-if(!confirm("Post delete karna hai?"))return;
-
-const {error}=await db.from("posts")
-.delete().eq("id",p.id).eq("user_id",currentUser.id);
-
-if(error){alert(error.message);return}
-
-if(p.image_url){
-await db.storage.from("post-images").remove([p.image_url]);
-}
-loadPosts();
-}
-
-async function uploadStory(input){
+/* Story */
+async function sendStory(){
+if(!selectedStory)return alert("Pehle photo ya video chuno");
 try{
-let file=input.files[0];
-if(!file)return;
+if(selectedStory.size>50*1024*1024)throw new Error("File 50 MB se chhoti honi chahiye");
+let path=await uploadMedia(selectedStory,"stories");
+let type=selectedStory.type.startsWith("video/")?"video":"image";
 
-let type=file.type.startsWith("video/")?"video":"image";
-if(file.size>50*1024*1024){
-alert("File 50 MB se chhoti honi chahiye");
-return;
-}
-
-let media=await uploadFile(file,"stories");
-
-const {error}=await db.from("stories").insert({
-user_id:currentUser.id,
-media_url:media.path,
+let {error}=await db.from("stories").insert({
+user_id:me.id,
+media_url:path,
 media_type:type,
-expires_at:new Date(Date.now()+24*60*60*1000).toISOString()
+expires_at:new Date(Date.now()+86400000).toISOString()
 });
-
 if(error)throw error;
 
-input.value="";
+cancelStory();
 alert("Story upload ho gayi!");
 loadStories();
-}catch(e){alert("Story error: "+e.message)}
+}catch(e){alert("Story upload error: "+e.message)}
 }
 
 async function loadStories(){
-const {data:stories,error}=await db.from("stories")
+let {data,error}=await db.from("stories")
 .select("*")
 .gt("expires_at",new Date().toISOString())
 .order("created_at",{ascending:true});
 
-if(error){storybar.innerText=error.message;return}
+if(error){$("storybar").innerText="Story error: "+error.message;return}
+$("storybar").innerHTML="";
 
-storybar.innerHTML="";
-
-let grouped={};
-for(let s of stories||[]){
-if(!grouped[s.user_id])grouped[s.user_id]=[];
-grouped[s.user_id].push(s);
+let groups={};
+for(let s of data||[]){
+if(!groups[s.user_id])groups[s.user_id]=[];
+groups[s.user_id].push(s);
 }
 
-for(let uid in grouped){
-let {data:profile}=await db.from("profiles")
-.select("username").eq("id",uid).maybeSingle();
+for(let uid of Object.keys(groups)){
+let {data:profile}=await db.from("profiles").select("username").eq("id",uid).maybeSingle();
+let group=groups[uid];
+let path=group[group.length-1].media_url;
+let url="";
+try{url=await signedUrl(path)}catch(e){continue}
 
 let item=document.createElement("div");
 item.className="storyuser";
-
 let ring=document.createElement("div");
-ring.className="storyring";
-
+ring.className="ring";
 let img=document.createElement("img");
-
-let first=grouped[uid][grouped[uid].length-1];
-let {data:url}=await db.storage.from("post-images")
-.createSignedUrl(first.media_url,3600);
-
-img.src=url?.signedUrl||"";
+img.src=url;
 ring.append(img);
 
 let label=document.createElement("p");
-label.innerText=uid===currentUser.id?"Your Story":profile?.username||"User";
-
+label.innerText=uid===me.id?"Your Story":profile?.username||"User";
 item.append(ring,label);
-item.onclick=()=>openStories(grouped[uid],profile?.username||"Your Story");
-storybar.append(item);
+item.onclick=()=>viewStories(group,label.innerText);
+$("storybar").append(item);
 }
 }
 
-let storyIndex=0;
-let activeStories=[];
-let storyTimer;
-
-async function openStories(stories,name){
-activeStories=stories;
+async function viewStories(list,name){
+storyList=list;
 storyIndex=0;
 showStory(name);
 }
 
 async function showStory(name){
 clearTimeout(storyTimer);
-if(storyIndex>=activeStories.length){closeStory();return}
+if(storyIndex>=storyList.length){closeViewer();return}
+let s=storyList[storyIndex];
+$("viewerName").innerText=name;
+$("viewerMedia").innerHTML="";
+$("viewer").classList.remove("hidden");
 
-let s=activeStories[storyIndex];
-storyName.innerText=name;
-
-storyMedia.innerHTML="";
-
-const {data}=await db.storage.from("post-images")
-.createSignedUrl(s.media_url,3600);
-
-if(!data){nextStory();return}
-
+try{
+let url=await signedUrl(s.media_url);
 let el=document.createElement(s.media_type==="video"?"video":"img");
-el.src=data.signedUrl;
-
-if(s.media_type==="video"){
-el.controls=true;
-el.autoplay=true;
-el.playsInline=true;
-}else{
-el.style.maxHeight="85vh";
+el.src=url;
+if(el.tagName==="VIDEO"){
+el.controls=true;el.autoplay=true;el.playsInline=true;
+}
+$("viewerMedia").append(el);
+storyTimer=setTimeout(()=>{storyIndex++;showStory(name)},s.media_type==="video"?15000:5000);
+}catch(e){alert("Story open error: "+e.message);closeViewer()}
 }
 
-storyMedia.append(el);
-storyViewer.classList.remove("hidden");
-
-storyTimer=setTimeout(nextStory,s.media_type==="video"?15000:5000);
-}
-
-function nextStory(){
-storyIndex++;
-showStory(storyName.innerText);
-}
-
-function closeStory(){
+function closeViewer(){
 clearTimeout(storyTimer);
-storyViewer.classList.add("hidden");
-storyMedia.innerHTML="";
+$("viewer").classList.add("hidden");
+$("viewerMedia").innerHTML="";
+}
+
+/* Posts */
+async function createPost(){
+try{
+let text=$("postText").value.trim();
+let file=selectedPost;
+if(!text&&!file)return alert("Post likho ya photo chuno");
+
+let path=null;
+if(file)path=await uploadMedia(file,"posts");
+
+let {error}=await db.from("posts").insert({
+user_id:me.id,
+content:text,
+image_url:path
+});
+if(error)throw error;
+
+$("postText").value="";
+$("postFile").value="";
+$("postPreview").innerHTML="";
+$("postPreview").classList.add("hidden");
+selectedPost=null;
+loadPosts();
+}catch(e){alert("Post error: "+e.message)}
+}
+
+async function loadPosts(){
+let {data,error}=await db.from("posts").select("*").order("created_at",{ascending:false});
+if(error){$("feed").innerText=error.message;return}
+$("feed").innerHTML="";
+
+for(let p of data||[]){
+let {data:profile}=await db.from("profiles").select("username").eq("id",p.user_id).maybeSingle();
+let card=document.createElement("div");
+card.className="card";
+
+let title=document.createElement("b");
+title.innerText=profile?.username||"User";
+let text=document.createElement("p");
+text.innerText=p.content||"";
+card.append(title,text);
+
+if(p.image_url){
+try{
+let url=await signedUrl(p.image_url);
+let media=document.createElement("img");
+media.src=url;
+media.className="media";
+card.append(media);
+}catch(e){}
+}
+
+if(p.user_id===me.id){
+let del=document.createElement("button");
+del.innerText="Delete Post";
+del.style.background="#b91c1c";
+del.onclick=()=>deletePost(p);
+card.append(del);
+}
+$("feed").append(card);
+}
+}
+
+async function deletePost(p){
+if(!confirm("Post delete karna hai?"))return;
+let {error}=await db.from("posts").delete().eq("id",p.id).eq("user_id",me.id);
+if(error){alert(error.message);return}
+if(p.image_url)await db.storage.from("post-images").remove([p.image_url]);
+loadPosts();
 }
 
 init();
 </script>
 </body>
- </html>
- 
+</html>
